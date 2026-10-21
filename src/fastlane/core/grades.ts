@@ -106,9 +106,12 @@ export function formatPercent(percent: number): string {
     return `${fixed}%`;
 }
 
-/** Short label for the threshold, e.g. "A- or better" → "≥A-". */
+/**
+ * Short badge label for the threshold, matching the requested wording:
+ * minus thresholds read as "A-+" (A- or better); others as "B+ or better".
+ */
 export function thresholdLabel(threshold: GradeThreshold): string {
-    return `≥${threshold}`;
+    return threshold.endsWith('-') ? `${threshold}+` : `${threshold} or better`;
 }
 
 /** Below this many letter grades we still show the number, but flag it as a small sample. */

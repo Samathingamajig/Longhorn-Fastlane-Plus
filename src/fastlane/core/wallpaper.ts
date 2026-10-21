@@ -91,7 +91,8 @@ export function groupByDay(classes: WallpaperClass[], options: Pick<WallpaperOpt
     return { days: days.filter(d => d.entries.length > 0), asynchronous };
 }
 
-export const COURSE_PALETTE = ['#BF5700', '#2563EB', '#059669', '#9333EA', '#DB2777', '#D97706', '#0891B2', '#4D7C0F'];
+/** Vivid but refined course colors (coral, blue, purple, teal, green, orange, indigo, pink), UTRP-style. */
+export const COURSE_PALETTE = ['#E5484D', '#0B84D6', '#8E4EC6', '#12A594', '#30A46C', '#E5741A', '#5B5BD6', '#D6409F'];
 
 export function courseColor(index: number, colorByCourse: boolean, theme: 'light' | 'dark'): string {
     if (!colorByCourse) return theme === 'dark' ? '#F5F5F4' : '#1C1917';

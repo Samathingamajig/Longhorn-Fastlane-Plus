@@ -76,7 +76,7 @@ export default function RegistrationAssistant({ host }: { host: HTMLElement }) {
     const settings = FastlaneSettingsStore.useStore(s => s);
     const { queue, lastFilled } = FastlaneQueueStore.useStore(s => s) as unknown as { queue: QueueState; lastFilled: string | null };
     const audit = FastlaneAuditStore.useStore(s => s.audit);
-    const plans = FastlanePlanStore.useStore(s => s.plans);
+    const plans = FastlanePlanStore.useStore(s => s.plans ?? {});
     const schedule = useActiveSchedule();
     const [collapsed, setCollapsed] = useState(readCollapsed);
     const [notice, setNotice] = useState<{ text: string; tone?: 'info' | 'warn' } | null>({

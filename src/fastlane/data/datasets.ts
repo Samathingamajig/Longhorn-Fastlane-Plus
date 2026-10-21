@@ -166,6 +166,8 @@ export interface UpdateOptions {
     force?: boolean;
     online?: boolean;
     timeoutMs?: number;
+    /** datasets shipped inside the package; never re-download the same bytes or older data */
+    bundled?: Partial<Record<DatasetId, { sha256: string; publishedAt: string }>>;
 }
 
 async function fetchWithTimeout(fetchFn: typeof fetch, url: string, timeoutMs: number): Promise<Response> {
@@ -201,6 +203,11 @@ export async function checkForUpdates(opts: UpdateOptions): Promise<UpdateReport
             try {
                 const current = await opts.store.getInstalled(descriptor.id);
                 if (!isNewer(descriptor, current?.descriptor)) continue;
+                const shipped = opts.bundled?.[descriptor.id];
+                if (!current && shipped) {
+                    if (shipped.sha256 === descriptor.sha256) continue;
+                    if (Date.parse(descriptor.publishedAt) <= Date.parse(shipped.publishedAt)) continue;
+                }
                 const dl = await fetchWithTimeout(fetchFn, descriptor.url, timeout);
                 if (!dl.ok) throw new Error(`download failed (${dl.status})`);
                 const payload = await dl.arrayBuffer();

@@ -154,6 +154,17 @@ describe('checkForUpdates', () => {
         expect(fetchFn).not.toHaveBeenCalled();
     });
 
+    it('does not re-download data identical to (or older than) the bundled copy', async () => {
+        const payload = json({ dataset: 'catalog', schemaVersion: 1, records: [] });
+        const d = await descriptorFor(payload);
+        const fetchFn = fakeFetch({ [manifestUrl]: () => Response.json({ manifestVersion: 1, generatedAt: '', datasets: [d] }) });
+        const same = await checkForUpdates({ manifestUrl, allowedHosts: HOSTS, store: memoryStore(), fetchFn, now: NOW, bundled: { catalog: { sha256: d.sha256, publishedAt: d.publishedAt } } });
+        expect(same.installed).toEqual([]);
+        const older = await checkForUpdates({ manifestUrl, allowedHosts: HOSTS, store: memoryStore(), fetchFn, now: NOW, bundled: { catalog: { sha256: 'x', publishedAt: '2026-10-05T00:00:00Z' } } });
+        expect(older.installed).toEqual([]);
+        expect(fetchFn).toHaveBeenCalledTimes(2); // manifest only, never the payload
+    });
+
     it('rejects an older or same version', async () => {
         const payload = json({ dataset: 'catalog', schemaVersion: 1, records: [] });
         const d = await descriptorFor(payload);

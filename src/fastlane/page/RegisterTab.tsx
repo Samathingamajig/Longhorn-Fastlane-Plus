@@ -133,7 +133,7 @@ function ItemRow({ item, index, queue, save }: { item: QueueItem; index: number;
 export default function RegisterTab() {
     const queue = FastlaneQueueStore.useStore(s => s.queue) as unknown as QueueState;
     const settings = FastlaneSettingsStore.useStore(s => s);
-    const plans = FastlanePlanStore.useStore(s => s.plans) as unknown as Record<string, PlanMeta>;
+    const plans = FastlanePlanStore.useStore(s => s.plans ?? {}) as unknown as Record<string, PlanMeta>;
     const schedule = useActiveSchedule();
     const [draft, setDraft] = useState({ uniqueId: '', label: '', group: '', requirement: '' });
     const [conditionLabel, setConditionLabel] = useState('');

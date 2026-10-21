@@ -6,15 +6,14 @@ import { UserScheduleStore } from '@shared/storage/UserScheduleStore';
 import type { ParsedAudit } from '../audit/types';
 import type { PlanMeta } from '../core/plans';
 import type { QueueState } from '../core/queue';
-import { isQueueState } from '../core/queue';
+import { emptyQueue, isQueueState } from '../core/queue';
 import type { ReminderConfig } from '../core/reminders';
-import { isReminderConfig } from '../core/reminders';
+import { defaultReminderConfig, isReminderConfig } from '../core/reminders';
 import { idbClearAll } from '../data/idb';
 import type { FastlaneSettings } from '../storage/stores';
 import {
     DEFAULT_SETTINGS,
     FASTLANE_LOCAL_PREFIXES,
-    FASTLANE_SYNC_PREFIXES,
     FastlaneAuditStore,
     FastlanePlanStore,
     FastlaneQueueStore,
@@ -100,16 +99,19 @@ export async function importAll(data: FastlaneExport): Promise<void> {
     if (data.audit !== undefined) await FastlaneAuditStore.set('audit', data.audit as never);
 }
 
-async function removeByPrefix(area: chrome.storage.StorageArea, prefixes: string[]) {
-    const all = await area.get(null);
-    const keys = Object.keys(all).filter(k => prefixes.some(p => k.startsWith(p)));
-    if (keys.length) await area.remove(keys);
-}
-
-/** Deletes Fastlane's own data (plans, backups, queue, audit, reminders, settings, caches). */
+/** Deletes Fastlane's own data (plans, backups, queue, audit, reminders, settings, caches) and resets to empty defaults. */
 export async function deleteFastlaneData(): Promise<void> {
-    await removeByPrefix(chrome.storage.local, FASTLANE_LOCAL_PREFIXES);
-    await removeByPrefix(chrome.storage.sync, FASTLANE_SYNC_PREFIXES);
+    // overwrite with empty defaults (rather than removing keys) so open pages never see a missing value
+    await FastlanePlanStore.set('plans', {} as never);
+    await FastlaneAuditStore.set('audit', null as never);
+    await FastlaneQueueStore.set({ queue: emptyQueue(), lastFilled: null } as never);
+    await FastlaneReminderStore.set('reminders', defaultReminderConfig() as never);
+    await FastlaneSettingsStore.set(DEFAULT_SETTINGS as never);
+    // remove any other Fastlane-owned keys (e.g. from older versions)
+    const keep = new Set(['FastlanePlans:plans', 'FastlaneAudit:audit', 'FastlaneQueue:queue', 'FastlaneQueue:lastFilled', 'FastlaneReminders:reminders']);
+    const local = await chrome.storage.local.get(null);
+    const stale = Object.keys(local).filter(k => FASTLANE_LOCAL_PREFIXES.some(p => k.startsWith(p)) && !keep.has(k));
+    if (stale.length) await chrome.storage.local.remove(stale);
     await idbClearAll();
     const alarms = await chrome.alarms.getAll();
     await Promise.all(alarms.filter(a => a.name.startsWith('fastlane-reminder:')).map(a => chrome.alarms.clear(a.name)));

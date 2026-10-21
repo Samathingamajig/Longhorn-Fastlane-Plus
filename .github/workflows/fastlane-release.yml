@@ -1,0 +1,49 @@
+name: Prepare Chrome Web Store release
+# Triggered by a version tag (v1.2.3). Builds, tests and attaches the store ZIP to a DRAFT GitHub release.
+# Uploading to the Chrome Web Store is a separate, manual step (or the optional job below), and
+# publishing always happens only after store review.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      upload_to_store:
+        description: Upload the ZIP to the Chrome Web Store as a draft (does not publish)
+        type: boolean
+        default: false
+permissions:
+  contents: write
+jobs:
+  verify:
+    uses: ./.github/workflows/fastlane-ci.yml
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Version must match tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: test "v$(node -p "require('./package.json').version")" = "${GITHUB_REF_NAME}"
+      - run: pnpm package:fastlane
+      - name: Draft GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" package/*.zip package/RELEASE.json --draft --generate-notes --title "Longhorn Fastlane Plus $GITHUB_REF_NAME"
+      - name: Upload to Chrome Web Store (draft only)
+        if: inputs.upload_to_store && env.CWS_CLIENT_ID != ''
+        env:
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+        run: |
+          npx --yes chrome-webstore-upload-cli@3 upload --source package/*.zip \
+            --extension-id "$CWS_EXTENSION_ID" --client-id "$CWS_CLIENT_ID" \
+            --client-secret "$CWS_CLIENT_SECRET" --refresh-token "$CWS_REFRESH_TOKEN"

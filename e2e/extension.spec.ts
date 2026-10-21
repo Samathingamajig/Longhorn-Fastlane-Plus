@@ -41,12 +41,12 @@ test.describe('course listing integration (demo fixtures, real code)', () => {
 
         // A- or better percentage with professor attribution next to the graph button
         const music = rowFor(page, '23095');
-        await expect(music.locator('[data-fastlane="grade"]')).toContainText(/\d+\.\d%\s*≥A-\s*·\s*Prof/);
+        await expect(music.locator('[data-fastlane="grade"]')).toContainText(/\d+\.\d%\s*A-\+\s*·\s*Prof/);
         const before = await music.locator('[data-fastlane="grade"]').innerText();
 
         // changing the threshold globally recalculates from counts
         await page.locator('#ut-registration-plus-table-head select').selectOption('B');
-        await expect(music.locator('[data-fastlane="grade"]')).toContainText('≥B');
+        await expect(music.locator('[data-fastlane="grade"]')).toContainText('B or better');
         const after = await music.locator('[data-fastlane="grade"]').innerText();
         expect(Number.parseFloat(after)).toBeGreaterThanOrEqual(Number.parseFloat(before));
         await page.locator('#ut-registration-plus-table-head select').selectOption('A-');
@@ -98,15 +98,16 @@ test.describe('course listing integration (demo fixtures, real code)', () => {
 
         // reload = browser restart for storage purposes
         await page.goto(`chrome-extension://${extensionId}/fastlane.html#plan`);
-        await expect(page.getByText('ranked backups (not counted)')).toBeVisible();
-        await expect(page.locator('.metric').nth(2)).toContainText('3');
-        await expect(page.locator('.metric').nth(0)).toContainText('10');
+        await expect(page.locator('.counts')).toContainText('10 hours');
+        await expect(page.locator('.counts')).toContainText('3 courses');
+        await expect(page.locator('.counts')).toContainText('3 backups');
+        await expect(page.locator('.slot-primary .chip', { hasText: '%' }).first()).toBeVisible();
         await page.screenshot({ path: `${SHOTS}/2-schedule-builder-backups.png`, fullPage: true });
 
         // activate a backup: it swaps into the calendar schedule
-        const slot = page.locator('.slot', { hasText: 'MUS 302L' }).first();
+        const slot = page.locator('[data-testid=slot]', { has: page.locator('.slot-primary', { hasText: '23100' }) });
         await slot.locator('.cand', { hasText: '33505' }).getByRole('button', { name: 'Activate' }).click();
-        await expect(slot.locator('.cand.active')).toContainText('33505');
+        await expect(page.locator('.slot-primary', { hasText: '33505' })).toBeVisible();
         const swapped = await page.evaluate(async () => {
             const all = await chrome.storage.local.get(null);
             const demo = (all.schedules as Array<{ name: string; courses: Array<{ uniqueId: number }> }>).find(s => s.name === 'Fastlane demo (Ideal)')!;
@@ -114,7 +115,7 @@ test.describe('course listing integration (demo fixtures, real code)', () => {
         });
         expect(swapped).toEqual([33505, 53780, 65555]);
         await page.reload();
-        await expect(page.locator('.slot', { hasText: 'C C 302' }).locator('.cand.active')).toContainText('33505');
+        await expect(page.locator('.slot-primary', { hasText: '33505' })).toContainText('Active · backup');
     });
 });
 
@@ -230,6 +231,23 @@ test.describe('degree audit, recommendations, reminders, map, wallpaper', () => 
         await page.screenshot({ path: `${SHOTS}/8-wallpaper.png`, fullPage: false });
     });
 
+    test('works offline: grades, conflicts, plans and cached recommendations', async ({ context, extensionId }) => {
+        const page = await context.newPage();
+        await openDemo(page, extensionId);
+        await page.waitForTimeout(2500); // sections cached
+        await context.setOffline(true);
+        await page.reload();
+        await expect(rowFor(page, '23095').locator('[data-fastlane="grade"]')).toContainText('%');
+        await expect(rowFor(page, '20001').locator('[data-fastlane="conflict"]')).toBeVisible();
+        await page.goto(`chrome-extension://${extensionId}/fastlane.html#recommend?req=CORE%20050`);
+        // (Playwright's offline emulation does not change navigator.onLine on extension pages, so the
+        // offline badge is covered by manual testing; here we verify the features work without network.)
+        await expect(page.locator('.rec').first()).toBeVisible();
+        await page.goto(`chrome-extension://${extensionId}/fastlane.html#plan`);
+        await expect(page.locator('.counts')).toContainText('hours');
+        await context.setOffline(false);
+    });
+
     test('delete all Fastlane data removes plans, queue and audit', async ({ context, extensionId }) => {
         const page = await context.newPage();
         await openDemo(page, extensionId);
@@ -237,8 +255,10 @@ test.describe('degree audit, recommendations, reminders, map, wallpaper', () => 
         page.on('dialog', d => void d.accept());
         await page.getByRole('button', { name: 'Delete Fastlane data' }).click();
         await expect(page.getByText('Fastlane data deleted.')).toBeVisible();
-        const keys = await page.evaluate(async () => Object.keys(await chrome.storage.local.get(null)));
-        expect(keys.some(k => k.startsWith('Fastlane'))).toBe(false);
-        expect(keys).toContain('schedules'); // UTRP schedules kept unless "delete everything"
+        const local = await page.evaluate(async () => chrome.storage.local.get(null));
+        expect(local['FastlanePlans:plans']).toEqual({});
+        expect(local['FastlaneAudit:audit']).toBeNull();
+        expect((local['FastlaneQueue:queue'] as { items: unknown[] }).items).toEqual([]);
+        expect(Object.keys(local)).toContain('schedules'); // UTRP schedules kept unless "delete everything"
     });
 });

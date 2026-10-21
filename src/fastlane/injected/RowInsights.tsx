@@ -1,6 +1,6 @@
 /**
  * Compact, always-visible insights next to UT Registration Plus's grade-graph button:
- *   72.4% ≥A- · Prof   |  ASYNC  |  Conflicts: C S 314 (52345)  |  + Backup
+ *   72.4% A-+ · Prof   |  ASYNC  |  Conflicts: C S 314 (52345)  |  + Backup
  * Rendered inside UTRP's shadow-root portal for the row.
  */
 import type { Course } from '@shared/types/Course';
@@ -146,7 +146,7 @@ function ConflictChip({ conflict }: { conflict: ConflictResult }) {
 }
 
 function BackupButton({ course, activeSchedule, rowAnalysis }: Pick<Props, 'course' | 'activeSchedule' | 'rowAnalysis'>) {
-    const plans = FastlanePlanStore.useStore(s => s.plans) as unknown as Record<string, import('../core/plans').PlanMeta>;
+    const plans = FastlanePlanStore.useStore(s => s.plans ?? {}) as unknown as Record<string, import('../core/plans').PlanMeta>;
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     if (!activeSchedule || activeSchedule.containsCourse(course)) return null;

@@ -1,0 +1,45 @@
+name: Fastlane CI
+# Type-check, unit tests, dataset integrity, build, MV3 security check, end-to-end tests in Chromium,
+# and an installable ZIP artifact for every push and pull request.
+on:
+  push:
+    branches: [fastlane-plus, main]
+  pull_request:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Type check
+        run: pnpm check-types
+      - name: Unit tests
+        run: pnpm vitest run --reporter=default --reporter=json --outputFile=test-results/unit-results.json
+      - name: Bundled dataset manifest is current
+        run: pnpm data:check
+      - name: Build
+        run: pnpm build
+      - name: MV3 / store security check
+        run: pnpm security:check
+      - name: End-to-end tests (unpacked extension in Chromium)
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          xvfb-run -a pnpm exec playwright test
+      - name: Package
+        run: node scripts/fastlane/package.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fastlane-build-${{ github.sha }}
+          path: |
+            package/
+            test-results/
+            store-assets/screenshots/

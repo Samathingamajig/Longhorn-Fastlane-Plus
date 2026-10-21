@@ -1,0 +1,111 @@
+name: Upstream sync (UT Registration Plus + Degree Audit Plus)
+# Checks weekly for upstream changes and opens REVIEWABLE pull requests / issues.
+# Nothing is merged or published automatically: upstream code only reaches students through a
+# normal, reviewed Chrome Web Store release.
+on:
+  schedule:
+    - cron: '17 14 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+env:
+  UTRP_REPO: https://github.com/Longhorn-Developers/UT-Registration-Plus.git
+  UTRP_BRANCH: main
+  DAP_REPO: Longhorn-Developers/Degree-Audit-Plus
+jobs:
+  utrp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "$UTRP_REPO" || true
+          git fetch upstream "$UTRP_BRANCH" --tags
+      - name: Detect new upstream commits
+        id: detect
+        run: |
+          NEW=$(git rev-list --count HEAD..upstream/$UTRP_BRANCH)
+          echo "count=$NEW" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short upstream/$UTRP_BRANCH)" >> "$GITHUB_OUTPUT"
+          echo "New upstream commits: $NEW"
+      - name: Prepare sync branch
+        if: steps.detect.outputs.count != '0'
+        id: merge
+        run: |
+          BRANCH="upstream-sync/${{ steps.detect.outputs.sha }}"
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then echo "exists=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git config user.name "fastlane-upstream-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          {
+            echo "## Upstream UT Registration Plus changes"
+            echo
+            git log --no-merges --format='- %h %s (%an)' HEAD..upstream/$UTRP_BRANCH | head -100
+            echo
+            echo "### Files changed upstream that Fastlane also modifies (review carefully)"
+            git diff --name-only HEAD...upstream/$UTRP_BRANCH | grep -F -x -f <(git diff --name-only upstream/$UTRP_BRANCH...HEAD) || echo "_none_"
+            echo
+            echo "### Data changes"
+            git diff --stat HEAD...upstream/$UTRP_BRANCH -- src/assets/database || true
+          } > /tmp/summary.md
+          if git merge --no-ff --no-edit upstream/$UTRP_BRANCH; then
+            echo "conflicts=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflicts=true" >> "$GITHUB_OUTPUT"
+            git diff --name-only --diff-filter=U > /tmp/conflicts.txt
+            git merge --abort
+          fi
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v4
+        if: steps.merge.outputs.conflicts == 'false'
+      - uses: actions/setup-node@v4
+        if: steps.merge.outputs.conflicts == 'false'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Refresh dataset manifest after merge
+        if: steps.merge.outputs.conflicts == 'false'
+        run: |
+          pnpm install --frozen-lockfile || pnpm install
+          node scripts/fastlane/dataset-manifest.mjs
+          git add -A && git commit -m "chore(data): refresh bundled dataset manifest after upstream sync" || true
+      - name: Open pull request
+        if: steps.merge.outputs.conflicts == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push origin "${{ steps.merge.outputs.branch }}"
+          gh pr create --base fastlane-plus --head "${{ steps.merge.outputs.branch }}" \
+            --title "chore(upstream): sync UT Registration Plus ${{ steps.detect.outputs.sha }}" \
+            --body-file /tmp/summary.md --label upstream-sync || gh pr create --base fastlane-plus --head "${{ steps.merge.outputs.branch }}" \
+            --title "chore(upstream): sync UT Registration Plus ${{ steps.detect.outputs.sha }}" --body-file /tmp/summary.md
+      - name: Report conflicts as an issue
+        if: steps.merge.outputs.conflicts == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          { cat /tmp/summary.md; echo; echo "### Merge conflicts"; sed 's/^/- /' /tmp/conflicts.txt; echo; echo "Resolve locally: \`git fetch upstream && git merge upstream/$UTRP_BRANCH\`, keep Fastlane hooks (see src/fastlane/__tests__/integration.test.ts), run \`pnpm vitest run && pnpm build && pnpm exec playwright test\`."; } > /tmp/issue.md
+          gh issue create --title "Upstream UT Registration Plus ${{ steps.detect.outputs.sha }} needs a manual merge" --body-file /tmp/issue.md
+  degree-audit-plus:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare with the reviewed Degree Audit Plus commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REVIEWED=$(node -p "require('./package.json').upstream.degreeAuditPlus.commit")
+          LATEST=$(gh api repos/$DAP_REPO/commits/main --jq .sha)
+          echo "reviewed=$REVIEWED latest=$LATEST"
+          if [ "$REVIEWED" = "$LATEST" ]; then exit 0; fi
+          FILES=$(gh api "repos/$DAP_REPO/compare/$REVIEWED...$LATEST" --jq '.files[].filename' | grep -E 'audit-scraping|domain/|tests/fixtures' || true)
+          [ -z "$FILES" ] && { echo "No parser-relevant changes"; exit 0; }
+          TITLE="Degree Audit Plus parser changes since ${REVIEWED:0:7}"
+          gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' | grep -q . && exit 0
+          printf "Parser-relevant files changed upstream (%s...%s):\n\n%s\n\nReview src/fastlane/audit/parseAudit.ts and the fixtures, then update package.json upstream.degreeAuditPlus.commit.\n" \
+            "${REVIEWED:0:7}" "${LATEST:0:7}" "$(echo "$FILES" | sed 's/^/- /')" > /tmp/dap.md
+          gh issue create --title "$TITLE" --body-file /tmp/dap.md

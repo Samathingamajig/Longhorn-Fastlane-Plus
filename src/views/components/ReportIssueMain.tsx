@@ -1,6 +1,6 @@
 import 'uno.css';
 
-import { captureFeedback } from '@sentry/react';
+import { feedbackIssueUrl } from 'src/fastlane/config';
 import type { JSX } from 'react';
 import { useState } from 'react';
 import XIcon from '~icons/ph/x';
@@ -14,12 +14,11 @@ interface Props {
 }
 
 /**
- * ReportIssueMain component renders a feedback form for users to submit their email and feedback.
+ * ReportIssueMain component renders a feedback form that opens a prefilled public GitHub issue.
  *
  * @returns The rendered component.
  */
 export default function ReportIssueMain({ onClose }: Props): JSX.Element {
-    const [email, setEmail] = useState('');
     const [feedback, setFeedback] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -35,18 +34,12 @@ export default function ReportIssueMain({ onClose }: Props): JSX.Element {
     const submitFeedback = async (event?: React.FormEvent<HTMLFormElement>) => {
         event?.preventDefault();
 
-        if (!email || !feedback) {
-            throw new Error('Email and feedback are required');
+        if (!feedback) {
+            throw new Error('Feedback is required');
         }
-        captureFeedback(
-            {
-                message: feedback,
-                email,
-            },
-            {
-                includeReplay: false,
-            }
-        );
+        // Fastlane: no telemetry backend. Open a prefilled public GitHub issue that the student submits
+        // themselves; the email field is never sent anywhere.
+        window.open(feedbackIssueUrl(feedback), '_blank', 'noopener');
 
         setIsSubmitted(true);
     };
@@ -62,7 +55,7 @@ export default function ReportIssueMain({ onClose }: Props): JSX.Element {
                     <span className='h-px -mt-2.5 flex-1 bg-gray' />
                 </div>
                 <Text variant='p' className='text-ut-black'>
-                    Your feedback has been submitted. You may close this window.
+                    A GitHub issue form opened in a new tab with your feedback. Submit it there (public), or close it to cancel.
                 </Text>
                 <div className='flex justify-end mt-1'>
                     <Button variant='filled' color='ut-burntorange' onClick={handleClose}>
@@ -89,25 +82,10 @@ export default function ReportIssueMain({ onClose }: Props): JSX.Element {
                 />
             </div>
             <Text variant='p' as='p' className='text-ut-black mt-1.5'>
-                Help us make UT Registration Plus even better!
+                Help improve Longhorn Fastlane Plus. This opens a public GitHub issue — please leave out personal information.
             </Text>
 
             <form onSubmit={submitFeedback} className='flex flex-col gap-3 mt-5'>
-                <div>
-                    <label htmlFor='email' className='mb-2 flex items-center text-ut-black'>
-                        <Text variant='small'>Your @utexas.edu Email</Text>
-                        <span className='ml-3 h-px flex-1 bg-ut-offwhite' />
-                    </label>
-                    <Input
-                        type='email'
-                        id='email'
-                        value={email}
-                        onChange={e => setEmail(e.target.value)}
-                        placeholder='bevo@utexas.edu'
-                        required
-                    />
-                </div>
-
                 <div>
                     <label htmlFor='feedback' className='mb-2 flex items-center text-ut-black'>
                         <Text variant='small'>Your Feedback</Text>
@@ -118,7 +96,7 @@ export default function ReportIssueMain({ onClose }: Props): JSX.Element {
                         value={feedback}
                         onChange={e => setFeedback(e.target.value)}
                         className='min-h-30 w-full resize-none border border-ut-offwhite/50 rounded px-spacing-4 py-spacing-3 text-[1rem] text-ut-black placeholder:text-gray focus:outline-none focus:ring-0'
-                        placeholder='I wish UT Registration Plus could...'
+                        placeholder='I wish Fastlane could...'
                         required
                     />
                 </div>
@@ -128,7 +106,7 @@ export default function ReportIssueMain({ onClose }: Props): JSX.Element {
                         Cancel
                     </Button>
                     <Button variant='filled' color='ut-burntorange' type='submit'>
-                        Send Feedback
+                        Open GitHub issue
                     </Button>
                 </div>
             </form>

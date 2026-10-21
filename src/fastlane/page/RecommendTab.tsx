@@ -21,7 +21,7 @@ export default function RecommendTab({ initialRequirement }: { initialRequiremen
     const settings = FastlaneSettingsStore.useStore(s => s);
     const audit = FastlaneAuditStore.useStore(s => s.audit);
     const queue = FastlaneQueueStore.useStore(s => s.queue) as unknown as QueueState;
-    const plans = FastlanePlanStore.useStore(s => s.plans) as unknown as Record<string, PlanMeta>;
+    const plans = FastlanePlanStore.useStore(s => s.plans ?? {}) as unknown as Record<string, PlanMeta>;
     const schedule = useActiveSchedule();
     const online = useOnline();
     const outstanding = useMemo(() => (audit ? outstandingTags(audit) : []), [audit]);

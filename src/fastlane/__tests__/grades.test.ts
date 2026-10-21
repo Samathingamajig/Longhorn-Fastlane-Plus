@@ -101,7 +101,9 @@ describe('helpers', () => {
     });
 
     it('labels thresholds', () => {
-        expect(thresholdLabel('A-')).toBe('≥A-');
+        expect(thresholdLabel('A-')).toBe('A-+');
+        expect(thresholdLabel('B+')).toBe('B+ or better');
+        expect(thresholdLabel('A')).toBe('A or better');
     });
 
     it('sorts semesters chronologically', () => {

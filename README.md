@@ -1,226 +1,93 @@
-# UT Registration Plus
+# Longhorn Fastlane Plus
 
-![UTRP Social Preview](images/UTRP_Social-Preview_Prod.svg)
+A local-first Chrome extension (Manifest V3) for UT Austin students: browse the course schedule with historical grade percentages inline, spot asynchronous classes and conflicts at a glance, build an ideal schedule with ranked backup classes, import your Interactive Degree Audit, get degree-aware fallback recommendations, and prepare registration codes quickly — **without any automatic enrollment**.
 
-![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hboadpjkoaieogjimneceaahlppnipaa)
-![Downloads](https://img.shields.io/chrome-web-store/d/hboadpjkoaieogjimneceaahlppnipaa)
-![License](https://img.shields.io/github/license/Longhorn-Developers/UT-Registration-Plus)
+> **Independent student project.** Longhorn Fastlane Plus is not affiliated with, endorsed by, or approved by The University of Texas at Austin or the UT Registration Plus team. It is a fork of [UT Registration Plus](https://github.com/Longhorn-Developers/UT-Registration-Plus) (MIT) and borrows its degree-audit parsing approach from [Degree Audit Plus](https://github.com/Longhorn-Developers/Degree-Audit-Plus) (MIT). All of UT Registration Plus's existing features (course search integration, grade graphs, calendar, professor/syllabus links, campus map) are kept.
 
-**UT Registration Plus (UTRP)** streamlines the process of registering for classes at UT Austin by reducing the chaos of juggling multiple tabs like Rate My Professor, Google Sheets, and the UT Course Schedule. With UTRP, you can simplify class selection and schedule management. We've all been there. 20 tabs of Rate My Professor, Google Spreadsheet, and the UT Course Schedule open and you still don't know what classes to take.
+## What it adds
 
-## Demo
+| Area | What you get |
+| --- | --- |
+| **Inline grades** | `72.4% A-+ · Prof` beside UTRP's grade-graph button on every course row. Threshold is global (A … D-, default A- or better) and can be changed right in the listing header or Settings. Percentages are computed from real historical grade counts; non-letter outcomes (CR/NC, Q, W …) are excluded from numerator and denominator. Hover for sample size, semesters, professor vs. course-wide scope, source and dataset date. Missing data shows **No grade data** — nothing is estimated. |
+| **Async / live online** | Blue row + **ASYNC ONLINE** only when the listing shows an internet instruction mode, no meeting days/times and no physical room. Sections that meet online at scheduled times get a separate **LIVE ONLINE** label. A `WB` room alone is never treated as asynchronous. In-person and hybrid rows keep normal styling. |
+| **Conflicts** | Every meeting (lecture, lab, discussion) is compared with your active schedule. Confirmed overlaps are struck through and show **Conflicts: M 408C (53780)**. Incomplete/TBA times show **Conflict ?** instead of guessing. Async sections never conflict by modality alone. |
+| **Schedules & backups** | Ideal / Backup / custom schedules (UTRP's calendar), credit hours, conflicts, locations, professors, weekly grid. Each planned class has **ranked backups** (drag-and-drop or ↑/↓) that never count toward the active schedule or create conflicts until you **Activate** one (class swapping updates the calendar). Mark a class full → the next backup in the same requirement category is suggested. Duplicate unique numbers are rejected. |
+| **Degree audit** | Import your IDA as saved HTML (best) or PDF. Parsed locally (bundled PDF.js). Shows completed / in-progress / remaining core and major requirements, credit hours, accepted vs **pending** transfer credit (pending is never counted), and prerequisite/restriction notes. A review screen highlights uncertain items so you can correct them. |
+| **Recommendations** | When your preferred class and all backups are full, Fastlane ranks real sections it has seen (saved locally from UT course-schedule pages you opened) by: outstanding requirement → semester → no conflicts → online/async preference → historical grade % (reliable samples first) → professor info → avoid-Friday → prerequisite/reserved-seat eligibility. Shows exact unique numbers. Availability says **Open as of <time>** only when a UT page displayed it recently; otherwise **Check availability**. |
+| **Registration assistant** | Floating panel on UT's add/drop screen: next unique number, one-click copy, course, requirement, next fallback, attempt history, Success / Full / Conflict / Restriction / Skip / Undo. Your priority queue is fully editable (groups, conditions such as "no CLEP credit", revisits). Optional **autofill** (off by default) only types the code into UT's *add* field — it never clicks, submits or presses Enter. Optional on-screen result reading only *suggests* an outcome for you to confirm (off by default). |
+| **Reminders** | Registration date/time/time zone → Chrome notifications 24 h / 1 h / 10 min before (plus custom), and optional prep reminders. Test button, `.ics` export, notification buttons open UT registration or your plan. |
+| **Campus map** | Final schedule by weekday on the bundled campus map: numbered pins with class/time/room, per-day colored order lines (estimated along campus walkways, clearly labeled), gap vs. walking time, and **Open walking directions** links. |
+| **Phone wallpaper** | Minimal, aesthetic, campus-map and hybrid styles; iPhone / Android / generic sizes; light/dark; optional rooms, professors, course colors. Drawn locally on a canvas. |
+| **Privacy** | No account, no backend, no analytics. Upstream error telemetry (Sentry) is disabled. Export/import JSON, delete Fastlane data, or delete everything. |
 
-![UTRP v2 Demo](images/UTRP-Demo.gif)
+## Install (unpacked)
 
-## Features
+1. Download `longhorn-fastlane-plus-<version>.zip` from the release (or build it, below) and unzip it.
+2. Open `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select the unzipped folder (the one containing `manifest.json`).
+3. Click the extension icon → **Fastlane**. To try everything offline, open `chrome-extension://<id>/demo.html` (shown on the details page as *Inspect views*) — it mounts the real integration on local fixtures.
+4. If you also have UT Registration Plus installed, disable one of them: both inject into the same pages.
 
-- **Quick Access to Class Info**: For each class in the UT Course Schedule, UTRP provides a "breakdown" popup with direct links to RateMyProfessor, Course Evaluation Surveys (CES), and past syllabi.
-- **Prerequisite & Restriction Highlights**: Displays course descriptions with highlighted details on prerequisites, restrictions, and other important info.
-- **Grade Distribution Graphs**: View an aggregate and semester-specific graph of grade distributions for each course.
-- **Saved Courses List**: Easily add courses to a list and view them in the extension popup. Copy unique numbers with a single click.
-- **Conflict Detection**: Automatically highlights and strikes out courses that conflict with your saved courses in the UT Course Catalog.
-- **Weekly Schedule View**: Displays your saved courses in a weekly schedule format for easier planning.
-- **Multiple Schedule Support**: Create multiple schedules to plan for different registration scenarios.
-- **And much more!**
+## Build from source
 
-## Toolchain
-
-- Node v24 (LTS)
-- TypeScript v7.x
-- Vite v8.x
-- pnpm v10.x
-- UnoCSS
-- Biome
-- Storybook
-- Figma
-- Semantic-Release
-- Custom Messaging & Storage Wrappers
-
-## VSCode Extensions
-
-We recommend using the following VSCode extensions to improve your development experience:
-
-- **[Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)**: Linting and formatting
-- **[Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)**: For Tailwind CSS class autocomplete and IntelliSense.
-- **[UnoCSS](https://marketplace.visualstudio.com/items?itemName=antfu.unocss)**: For better support with UnoCSS utilities.
-
-## Contributing
-
-Contributions are welcome and encouraged! To get started:
-
-1. **Fork** the repository.
-2. **Create a new branch**: `git checkout -b feature/your-feature`.
-3. **Make changes** and ensure your code passes linting and formatting checks: `pnpm run lint` and `pnpm run format`.
-4. **Commit your changes** following the [Conventional Commits](#conventional-commits--branch-naming-convention) specification.
-5. **Push** your branch: `git push origin feature/your-feature`.
-6. **Open a Pull Request**.
-
-For significant changes, it’s recommended to open an issue first to discuss the proposed updates.
-
-## Development
-
-### Getting Started
-
-1. Clone this repository: `git clone https://github.com/Longhorn-Developers/UT-Registration-Plus.git`
-2. Install the required tooling. This project uses the Node.js version specified in `.nvmrc` and `pnpm` for dependency management.
-
-<details open>
-<summary>Preferred: use <a href="https://moonrepo.dev/docs/proto/install">proto</a></summary>
-
-Install `proto`, then let it provision the correct Node.js and `pnpm` versions for this repo:
+Requirements: Node 24 (see `.nvmrc`), pnpm 10 (`corepack enable`).
 
 ```bash
-proto install
 pnpm install
 ```
 
-</details>
-
-<details>
-<summary>Alternative: use <a href="https://github.com/nvm-sh/nvm">nvm</a></summary>
-
-Install and use the Node.js version from `.nvmrc`:
+```bash
+pnpm build                  # dist/ = unpacked MV3 extension
+```
 
 ```bash
-nvm install
-nvm use
+pnpm vitest run             # unit tests (UTRP + Fastlane)
 ```
-
-Then install `pnpm` by following the official install instructions at [pnpm.io/installation](https://pnpm.io/installation), or with npm after `nvm use`:
 
 ```bash
-npm install --global pnpm
-pnpm install
+pnpm exec playwright install chromium && pnpm e2e    # end-to-end tests with the real extension
 ```
 
-_Note: Installing the wrong Node.js version can lead to setup and build errors._
-
-</details>
-
-Once set up, the extension can be built to the `dist/` directory using the following methods:
-
-### Development Builds
-
-- Run the development server:
-    ```bash
-    pnpm dev
-    ```
-
-### Production Builds
-
-- To generate production builds:
-    ```bash
-    pnpm build
-    ```
-
-<details>
-<summary>Beta Builds</summary>
-
-Use `BETA=true pnpm build` to generate a beta build.
-
-</details>
-
-## Loading the Extension Manually
-
-To load the extension manually in Chrome:
-
-1. Open `chrome://extensions`.
-2. Enable 'Developer Mode'.
-3. Click 'Load unpacked'.
-4. Navigate to the `dist/` directory and select it.
-
-## Bug Reporting
-
-If you encounter bugs or issues, please report them in the [Issues](https://github.com/Longhorn-Developers/UT-Registration-Plus/issues) section, including:
-
-- A clear, descriptive title
-- Steps to reproduce the issue
-- Expected behavior
-- Screenshots or logs (if applicable)
-
-We aim to address issues promptly.
-
-## Conventional Commits & Branch Naming Convention
-
-We follow the **Conventional Commits** specification for commit messages. This ensures a consistent commit history and enables automated versioning and changelog generation.
-
-### Commit Messages
-
-Follow this structure for commit messages:
-
-```
-<type>(<scope>): <subject>
+```bash
+pnpm package:fastlane       # notices → build → security check → package/longhorn-fastlane-plus-<version>.zip
 ```
 
-Where:
+Optional build-time configuration (all off by default):
 
-- **type**: One of the following:
-    - `feat`: A new feature
-    - `fix`: A bug fix
-    - `docs`: Documentation updates
-    - `style`: Code formatting changes (whitespace, semicolons, etc.)
-    - `refactor`: Code restructuring (without adding features or fixing bugs)
-    - `test`: Adding or modifying tests
-    - `chore`: Maintenance tasks or build process changes
+| Variable | Purpose |
+| --- | --- |
+| `VITE_FASTLANE_DATA_MANIFEST_URL` | HTTPS URL of a static dataset manifest (e.g. GitHub Pages) for optional dataset updates |
+| `VITE_FASTLANE_REPO_URL` | Repository used by the in-app "feedback → GitHub issue" link |
+| `VITE_FASTLANE_UNINSTALL_URL` | Optional uninstall survey page |
+| `VITE_SENTRY_DSN` | Re-enables error telemetry. **Do not set** without updating the privacy policy and store disclosures. |
 
-Example:
+## Project layout
 
-```
-feat(auth): add login functionality
-fix(ui): align buttons in navbar
-```
+- `src/fastlane/core/` — pure, tested logic: grades, meetings & conflicts, modality, requirements, plans/backups, recommendations, queue, detection, autofill decisions, reminders, ICS, campus stops, wallpaper layout
+- `src/fastlane/audit/` — IDA HTML/PDF parsing
+- `src/fastlane/data/` — versioned dataset manifest, validation, IndexedDB store
+- `src/fastlane/injected/` — UI injected into UT pages (row insights, header, registration assistant)
+- `src/fastlane/page/` — the Fastlane workspace (`fastlane.html`)
+- `src/fastlane/background/` — alarms, notifications, section cache, dataset updates
+- `src/pages/demo/` — offline demo page
+- `e2e/` — Playwright tests that load the built extension
+- `docs/` — privacy policy, data sources, licenses, store listing, release & upstream process, limitations
 
-### Branch Naming
+## Documentation
 
-Branch names should follow the format:
+- [Privacy policy](docs/PRIVACY_POLICY.md)
+- [Data sources and licensing](docs/DATA_SOURCES.md)
+- [Open-source license compliance report](docs/LICENSE_COMPLIANCE.md)
+- [Chrome Web Store listing & permission justifications](docs/STORE_LISTING.md)
+- [Chrome Web Store review checklist](docs/STORE_REVIEW_CHECKLIST.md)
+- [Release, versioning and upstream maintenance](docs/RELEASE_AND_UPSTREAM.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Test results](docs/TEST_RESULTS.md)
+- [Known limitations](docs/LIMITATIONS.md)
 
-```
-<type>/<short-description>
-```
+## Registration policy
 
-Examples:
-
-- `feat/user-login`
-- `fix/navbar-layout`
-- `docs/update-readme`
+UT Austin [prohibits automated add/drop/registration programs](https://registrar.utexas.edu/schedules/272/whentoregister). Fastlane never submits forms, clicks registration buttons, sends enrollment requests, refreshes pages, polls seat availability, or bypasses login. You submit every registration request yourself.
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE.md) for more details.
-
-## Code of Conduct
-
-We maintain a strict code of conduct. By contributing, you agree to adhere to the rules outlined in [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md).
-
-## Acknowledgements
-
-Special thanks to the developers and contributors behind these amazing tools and libraries:
-
-- [chrome-extension-toolkit](https://github.com/sghsri/chrome-extension-toolkit)
-- [UT_Grade_Parser](https://github.com/doprz/UT_Grade_Parser)
-- [eslint-plugin-import-essentials](https://github.com/doprz/eslint-plugin-import-essentials)
-- [UT Registration Plus v1.2.2.7](https://github.com/Longhorn-Developers/UT-Registration-Plus/tree/legacy) by @sghsri
-- [UT Registration Planner](https://github.com/doprz/UT-Registration-Planner) by @doprz
-- [Figma Designs](https://www.figma.com/design/8tsCay2FRqctrdcZ3r9Ahw/UTRP) by @IsaDavRod
-- [Longhorn Developers](https://github.com/Longhorn-Developers) - established in 2024
-- The UTRP devs, beta testers, and all supporters of the project!
-
-## Activity
-
-![UT-Registration-Plus Activity](https://repobeats.axiom.co/api/embed/47930fa3916ac1b475cd63a05948c449eb5ad502.svg "UT-Registration-Plus Repobeats analytics image")
-
-## Star History
-
-<a href="https://star-history.com/#Longhorn-Developers/UT-Registration-Plus&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Longhorn-Developers/UT-Registration-Plus&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Longhorn-Developers/UT-Registration-Plus&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Longhorn-Developers/UT-Registration-Plus&type=Date" />
- </picture>
-</a>
-
-## Contributors
-
-<a href="https://github.com/Longhorn-Developers/UT-Registration-Plus/graphs/contributors">
-<img src="https://contrib.rocks/image?repo=Longhorn-Developers/UT-Registration-Plus&columns=24&max=480" />
-</a>
+MIT — see [LICENSE.md](LICENSE.md). Upstream copyright notices are preserved; third-party notices ship in the extension as `THIRD_PARTY_NOTICES.txt`.

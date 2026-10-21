@@ -86,6 +86,18 @@ export default function PopupMain(): JSX.Element {
                             Calendar
                         </Button>
                         <Button
+                            variant='outline'
+                            size='small'
+                            color='ut-burntorange'
+                            title='Backups, degree audit, recommendations and registration prep'
+                            onClick={() => {
+                                void background.openNewTab({ url: chrome.runtime.getURL('fastlane.html') });
+                                window.close();
+                            }}
+                        >
+                            Fastlane
+                        </Button>
+                        <Button
                             variant='minimal'
                             size='small'
                             color='ut-black'

@@ -3,8 +3,10 @@
  * Active sections live in the UT Registration Plus schedule (calendar, credit hours, conflicts);
  * ranked backups live here and never count until activated.
  */
-import { background } from '@shared/messages';
-import { switchSchedule, useActiveSchedule, useAllSchedules } from '@views/hooks/useSchedules';
+import { useActiveSchedule } from '@views/hooks/useSchedules';
+import CalendarDotsIcon from '~icons/ph/calendar-dots';
+import ExportIcon from '~icons/ph/export';
+import PlusCircleIcon from '~icons/ph/plus-circle';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { PlanKind, PlanMeta, PlanSlot } from '../core/plans';
@@ -23,9 +25,11 @@ import { CORE_COMPONENTS, coreTag, describeRequirement } from '../core/requireme
 import type { SectionRecord } from '../core/sections';
 import { activateSection, loadPlan, planOps, setPlanKind, updatePlan } from '../services/planService';
 import { FastlanePlanStore, FastlaneSettingsStore } from '../storage/stores';
-import { CopyButton, GradeChip, instructorsText, locationsText, ModalityChip, PageHead, UniqueCode } from './common';
+import { formatMeeting } from '../core/meetings';
+import { exportAll } from '../services/privacy';
+import { CodeChip, downloadText, GradeChip, ModalityChip, sectionColor } from './common';
 import { useGradeStats } from './hooks';
-import WeekGrid from './WeekGrid';
+import WeekGrid, { blockTitle } from './WeekGrid';
 
 const KIND_LABELS: Record<PlanKind, string> = { ideal: 'Ideal schedule', backup: 'Backup schedule', custom: 'Custom schedule' };
 
@@ -51,9 +55,11 @@ function SlotCard({
     onNavigate,
     grades,
     onError,
+    colorIndex,
 }: {
     plan: PlanMeta;
     slot: PlanSlot;
+    colorIndex: number;
     onNavigate: (tab: string, params?: Record<string, string>) => void;
     grades: ReturnType<typeof useGradeStats>;
     onError: (m: string) => void;
@@ -65,15 +71,18 @@ function SlotCard({
     const sid = plan.scheduleId;
     const run = (p: Promise<unknown>) => p.catch((e: Error) => onError(e.message));
 
+    const active = slot.candidates.find(c => c.uniqueId === slot.activeUniqueId)!;
+    const activeIndex = slot.candidates.indexOf(active);
+    const color = sectionColor(active, colorIndex);
+
     const candidateRow = (c: SectionRecord, index: number) => {
-        const isActive = c.uniqueId === slot.activeUniqueId;
         const isFull = c.uniqueId in slot.full;
         const backupIndex = index - 1;
-        const preview = !isActive ? previewActivation(plan, slot.id, c.uniqueId) : null;
+        const preview = previewActivation(plan, slot.id, c.uniqueId);
         return (
             <div
                 key={c.uniqueId}
-                className={`cand ${isActive ? 'active' : ''} ${isFull ? 'is-full' : ''} ${dragFrom === backupIndex ? 'dragging' : ''} ${dropAt === backupIndex && dragFrom !== null ? 'drop-target' : ''}`}
+                className={`cand ${isFull ? 'is-full' : ''} ${dragFrom === backupIndex ? 'dragging' : ''} ${dropAt === backupIndex && dragFrom !== null ? 'drop-target' : ''}`}
                 draggable={index > 0}
                 onDragStart={e => {
                     setDragFrom(backupIndex);
@@ -98,38 +107,35 @@ function SlotCard({
                     setDropAt(null);
                 }}
             >
-                <div className='handle' aria-hidden={index === 0} title={index > 0 ? 'Drag to reorder backups' : 'Primary'}>
-                    {index === 0 ? <span className='rank'>1°</span> : '⋮⋮'}
+                <div className='handle' title={index > 0 ? 'Drag to reorder backups' : 'Primary'}>
+                    {index > 0 ? '⋮⋮' : ''}
                 </div>
+                <div className='swatch' style={{ background: color }} />
                 <div className='cand-main stack' style={{ gap: 2 }}>
                     <div className='row'>
-                        <span className='rank'>{index === 0 ? 'PRIMARY' : `BACKUP ${index}`}</span>
-                        <UniqueCode id={c.uniqueId} />
-                        <b>{c.courseCode}</b>
-                        <span>{c.title}</span>
-                        {isActive && <span className='chip accent'>Active</span>}
+                        <span className={`chip ${index === 0 ? 'accent' : 'backup'}`}>{index === 0 ? 'Primary' : `Backup ${index}`}</span>
+                        <span className='title'>{blockTitle(c)}</span>
+                        <span className='muted small'>{c.title}</span>
                         {isFull && <span className='chip bad'>Full</span>}
                         <ModalityChip modality={c.modality} />
                         <GradeChip stat={grades.get(c.uniqueId)} />
                     </div>
                     <div className='small muted'>
-                        {instructorsText(c)} · {locationsText(c)} · {c.creditHours} hrs
-                        {!c.scheduleComplete && c.modality !== 'async-online' ? ' · meeting times incomplete' : ''}
+                        {c.meetings.length ? c.meetings.map(formatMeeting).join('; ') : c.modality === 'async-online' ? 'Asynchronous — no meeting times' : 'Times not listed'} ·{' '}
+                        {c.creditHours} hrs
                     </div>
-                    {preview?.status === 'conflict' && (
+                    {preview.status === 'conflict' && (
                         <div className='small' style={{ color: 'var(--bad)' }}>
                             If activated, conflicts with {preview.conflicts.map(x => x.with.label).join(', ')}
                         </div>
                     )}
-                    {preview?.status === 'unknown' && <div className='small' style={{ color: 'var(--warn)' }}>If activated, conflict status unknown</div>}
+                    {preview.status === 'unknown' && <div className='small' style={{ color: 'var(--warn)' }}>If activated, conflict status unknown</div>}
                 </div>
                 <div className='row' style={{ justifyContent: 'flex-end' }}>
-                    <CopyButton text={String(c.uniqueId).padStart(5, '0')} />
-                    {!isActive && (
-                        <button type='button' className='btn sm' onClick={() => void run(activateSection(sid, slot.id, c.uniqueId))}>
-                            Activate
-                        </button>
-                    )}
+                    <CodeChip id={c.uniqueId} />
+                    <button type='button' className='btn sm outline-accent' onClick={() => void run(activateSection(sid, slot.id, c.uniqueId))}>
+                        Activate
+                    </button>
                     {isFull ? (
                         <button type='button' className='btn sm' onClick={() => void run(updatePlan(sid, p => clearFull(p, slot.id, c.uniqueId)))}>
                             Not full
@@ -140,22 +146,12 @@ function SlotCard({
                         </button>
                     )}
                     {index > 1 && (
-                        <button
-                            type='button'
-                            className='btn sm'
-                            aria-label={`Move ${c.courseCode} up`}
-                            onClick={() => void run(planOps.reorder(sid, slot.id, backupIndex, backupIndex - 1))}
-                        >
+                        <button type='button' className='btn sm' aria-label={`Move ${c.courseCode} up`} onClick={() => void run(planOps.reorder(sid, slot.id, backupIndex, backupIndex - 1))}>
                             ↑
                         </button>
                     )}
                     {index > 0 && index < slot.candidates.length - 1 && (
-                        <button
-                            type='button'
-                            className='btn sm'
-                            aria-label={`Move ${c.courseCode} down`}
-                            onClick={() => void run(planOps.reorder(sid, slot.id, backupIndex, backupIndex + 1))}
-                        >
+                        <button type='button' className='btn sm' aria-label={`Move ${c.courseCode} down`} onClick={() => void run(planOps.reorder(sid, slot.id, backupIndex, backupIndex + 1))}>
                             ↓
                         </button>
                     )}
@@ -164,45 +160,68 @@ function SlotCard({
                             Make primary
                         </button>
                     )}
-                    {!isActive && (
-                        <button type='button' className='btn sm danger' onClick={() => void run(planOps.remove(sid, slot.id, c.uniqueId))}>
-                            Remove
-                        </button>
-                    )}
+                    <button type='button' className='btn sm ghost danger' aria-label={`Remove ${c.courseCode}`} onClick={() => void run(planOps.remove(sid, slot.id, c.uniqueId))}>
+                        Remove
+                    </button>
                 </div>
             </div>
         );
     };
 
+    const activeFull = active.uniqueId in slot.full;
+
     return (
-        <div className='slot'>
-            <div className='slot-head'>
-                <div className='row'>
-                    <b>{slot.candidates.find(c => c.uniqueId === slot.activeUniqueId)?.courseCode}</b>
-                    <RequirementPicker value={slot.requirement} onChange={v => void run(planOps.setRequirement(sid, slot.id, v))} />
-                    <span className='small muted'>{backupsOf(slot).length} backup(s)</span>
+        <div className='slot' data-testid='slot'>
+            <div className='slot-primary' style={{ background: color }}>
+                <div className='strip' />
+                <div className='body'>
+                    <span className='title'>
+                        {blockTitle(active)} {activeFull && <span className='chip'>Full</span>}
+                    </span>
+                    <span className='sub'>
+                        {active.title} · {active.meetings.length ? active.meetings.map(formatMeeting).join('; ') : active.modality === 'async-online' ? 'Asynchronous' : 'Times not listed'}
+                    </span>
+                    <span className='row' style={{ gap: 6, marginTop: 3 }}>
+                        <span className='chip'>{activeIndex === 0 ? 'Active · primary' : `Active · backup ${activeIndex}`}</span>
+                        {active.modality === 'async-online' && <span className='chip'>Async online</span>}
+                        {active.modality === 'live-online' && <span className='chip'>Live online</span>}
+                        <GradeChip stat={grades.get(active.uniqueId)} />
+                    </span>
                 </div>
-                <div className='row'>
-                    {suggestion && (
-                        <button type='button' className='btn sm primary' onClick={() => void run(activateSection(sid, slot.id, suggestion.uniqueId))}>
-                            Primary full → activate {suggestion.courseCode} ({String(suggestion.uniqueId).padStart(5, '0')})
+                <div className='actions'>
+                    <CodeChip id={active.uniqueId} onColor />
+                    {activeFull ? (
+                        <button type='button' className='btn sm' onClick={() => void run(updatePlan(sid, p => clearFull(p, slot.id, active.uniqueId)))}>
+                            Not full
                         </button>
-                    )}
-                    {(exhausted || backupsOf(slot).length === 0) && slot.requirement && (
-                        <button type='button' className='btn sm' onClick={() => onNavigate('recommend', { req: slot.requirement })}>
-                            Find {describeRequirement(slot.requirement)} options
+                    ) : (
+                        <button type='button' className='btn sm' onClick={() => void run(planOps.markFull(sid, slot.id, active.uniqueId))}>
+                            Mark full
                         </button>
                     )}
                 </div>
             </div>
-            {slot.candidates.map(candidateRow)}
+            <div className='slot-meta'>
+                <RequirementPicker value={slot.requirement} onChange={v => void run(planOps.setRequirement(sid, slot.id, v))} />
+                <span className='small muted'>
+                    {backupsOf(slot).length} ranked backup{backupsOf(slot).length === 1 ? '' : 's'} · not on your calendar until activated
+                </span>
+                <span style={{ flex: 1 }} />
+                {suggestion && (
+                    <button type='button' className='btn sm primary' onClick={() => void run(activateSection(sid, slot.id, suggestion.uniqueId))}>
+                        Full → activate {suggestion.courseCode} ({String(suggestion.uniqueId).padStart(5, '0')})
+                    </button>
+                )}
+                {(exhausted || backupsOf(slot).length === 0) && slot.requirement && (
+                    <button type='button' className='btn sm' onClick={() => onNavigate('recommend', { req: slot.requirement })}>
+                        Find {describeRequirement(slot.requirement)} options
+                    </button>
+                )}
+            </div>
+            {slot.candidates.map((c, i) => (c.uniqueId === slot.activeUniqueId ? null : candidateRow(c, i)))}
             {backupsOf(slot).length === 0 && (
-                <div className='cand'>
-                    <span />
-                    <span className='small muted'>
-                        No backups yet. On UT’s course schedule, click <b>+ Backup</b> on any section, or add one from Recommendations.
-                    </span>
-                    <span />
+                <div className='small muted' style={{ padding: '10px 14px' }}>
+                    No backups yet. On UT’s course schedule, click <b>+ Backup</b> on any section, or add one from Recommendations.
                 </div>
             )}
         </div>
@@ -211,8 +230,7 @@ function SlotCard({
 
 export default function PlanTab({ onNavigate }: { onNavigate: (tab: string, params?: Record<string, string>) => void }) {
     const schedule = useActiveSchedule();
-    const schedules = useAllSchedules();
-    const plans = FastlanePlanStore.useStore(s => s.plans) as unknown as Record<string, PlanMeta>;
+    const plans = FastlanePlanStore.useStore(s => s.plans ?? {}) as unknown as Record<string, PlanMeta>;
     const threshold = FastlaneSettingsStore.useStore(s => s.gradeThreshold);
     const [error, setError] = useState<string | null>(null);
 
@@ -230,45 +248,42 @@ export default function PlanTab({ onNavigate }: { onNavigate: (tab: string, para
 
     return (
         <div className='stack'>
-            <PageHead
-                title='Schedule builder'
-                subtitle='Your active schedule is what counts. Backups are ranked per class and never create conflicts until you activate one.'
-                actions={
-                    <>
-                        <select aria-label='Schedule' value={schedule?.id} onChange={e => void switchSchedule(e.target.value)}>
-                            {schedules.map(s => (
-                                <option key={s.id} value={s.id}>
-                                    {s.name}
-                                    {plans[s.id] ? ` — ${KIND_LABELS[plans[s.id]!.kind]}` : ''}
-                                </option>
-                            ))}
+            <div className='page-head'>
+                <div>
+                    <h1>{schedule?.name ?? 'Schedule'}</h1>
+                    <div className='counts'>
+                        <span>{plan ? totalCreditHours(plan) : 0} hours</span>
+                        <span>{active.length} courses</span>
+                        {backupCount > 0 && <span style={{ color: 'var(--muted)' }}>{backupCount} backups</span>}
+                    </div>
+                </div>
+                <div className='toolbar'>
+                    {plan && (
+                        <select aria-label='Schedule type' value={plan.kind} onChange={e => void setPlanKind(plan.scheduleId, e.target.value as PlanKind)}>
+                            <option value='ideal'>Ideal schedule</option>
+                            <option value='backup'>Backup schedule</option>
+                            <option value='custom'>Custom schedule</option>
                         </select>
-                        {plan && (
-                            <select aria-label='Schedule type' value={plan.kind} onChange={e => void setPlanKind(plan.scheduleId, e.target.value as PlanKind)}>
-                                <option value='ideal'>Ideal</option>
-                                <option value='backup'>Backup</option>
-                                <option value='custom'>Custom</option>
-                            </select>
-                        )}
-                        <button
-                            type='button'
-                            className='btn'
-                            onClick={async () => {
-                                const name = prompt('Name for the new schedule', 'Backup schedule');
-                                if (name) {
-                                    const err = await background.createSchedule({ scheduleName: name });
-                                    if (err) setError(err);
-                                }
-                            }}
-                        >
-                            New schedule
-                        </button>
-                        <a className='btn' href={chrome.runtime.getURL('calendar.html')} target='_blank' rel='noopener'>
-                            Full calendar ↗
-                        </a>
-                    </>
-                }
-            />
+                    )}
+                    <span className='sep' />
+                    <a className='tool' href='https://utdirect.utexas.edu/apps/registrar/course_schedule/' target='_blank' rel='noopener'>
+                        <PlusCircleIcon /> Add courses
+                    </a>
+                    <button
+                        type='button'
+                        className='tool'
+                        onClick={async () => downloadText(JSON.stringify(await exportAll(false), null, 2), `fastlane-${schedule?.name ?? 'schedule'}.json`)}
+                    >
+                        <ExportIcon /> Export
+                    </button>
+                    <a className='tool' href={chrome.runtime.getURL('calendar.html')} target='_blank' rel='noopener'>
+                        <CalendarDotsIcon /> Calendar
+                    </a>
+                </div>
+            </div>
+            {conflicts.length === 0 && untimed.some(s => !s.scheduleComplete && s.modality !== 'async-online') && (
+                <div className='notice warn small'>Some classes have incomplete meeting times, so conflicts with them cannot be ruled out.</div>
+            )}
             {error && (
                 <div className='notice bad' role='alert'>
                     {error}{' '}
@@ -277,24 +292,6 @@ export default function PlanTab({ onNavigate }: { onNavigate: (tab: string, para
                     </button>
                 </div>
             )}
-            <div className='metrics'>
-                <div className='metric'>
-                    <b>{plan ? totalCreditHours(plan) : 0}</b>
-                    <span>active credit hours</span>
-                </div>
-                <div className='metric'>
-                    <b>{active.length}</b>
-                    <span>active classes</span>
-                </div>
-                <div className='metric'>
-                    <b>{backupCount}</b>
-                    <span>ranked backups (not counted)</span>
-                </div>
-                <div className='metric'>
-                    <b style={{ color: conflicts.length ? 'var(--bad)' : undefined }}>{conflicts.length}</b>
-                    <span>known conflicts</span>
-                </div>
-            </div>
             {conflicts.length > 0 && (
                 <div className='notice bad'>
                     Conflicts in the active schedule: {conflicts.map(([a, b]) => `${a.label} ↔ ${b.label}`).join('; ')}
@@ -311,14 +308,10 @@ export default function PlanTab({ onNavigate }: { onNavigate: (tab: string, para
             ) : (
                 <>
                     <WeekGrid sections={active} />
-                    {untimed.length > 0 && (
-                        <div className='small muted'>
-                            Not on the grid: {untimed.map(s => `${s.courseCode} (${s.modality === 'async-online' ? 'asynchronous' : 'times not listed'})`).join(', ')}
-                        </div>
-                    )}
+                    <div className='section-title'>Planned classes &amp; backups</div>
                     <div className='stack'>
-                        {plan?.slots.map(slot => (
-                            <SlotCard key={slot.id} plan={plan} slot={slot} grades={grades} onNavigate={onNavigate} onError={setError} />
+                        {plan?.slots.map((slot, i) => (
+                            <SlotCard key={slot.id} plan={plan} slot={slot} colorIndex={i} grades={grades} onNavigate={onNavigate} onError={setError} />
                         ))}
                     </div>
                 </>

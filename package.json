@@ -33,7 +33,9 @@
         "data:manifest": "node scripts/fastlane/dataset-manifest.mjs",
         "data:check": "node scripts/fastlane/dataset-manifest.mjs --check",
         "security:check": "node scripts/fastlane/security-check.mjs dist",
-        "package:fastlane": "pnpm build && node scripts/fastlane/security-check.mjs dist && node scripts/fastlane/package.mjs"
+        "package:fastlane": "node scripts/fastlane/third-party-notices.mjs && pnpm build && node scripts/fastlane/security-check.mjs dist && node scripts/fastlane/package.mjs",
+        "notices": "node scripts/fastlane/third-party-notices.mjs",
+        "e2e": "playwright test"
     },
     "dependencies": {
         "@date-fns/tz": "^1.4.1",

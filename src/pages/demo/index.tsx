@@ -6,6 +6,7 @@
 import { UserScheduleStore } from '@shared/storage/UserScheduleStore';
 import { OptionsStore } from '@shared/storage/OptionsStore';
 import { UserSchedule } from '@shared/types/UserSchedule';
+import { getCourseColors } from '@shared/util/colors';
 import CourseCatalogMain from '@views/components/CourseCatalogMain';
 import { CourseCatalogScraper } from '@views/lib/CourseCatalogScraper';
 import getCourseTableRows from '@views/lib/getCourseTableRows';
@@ -38,6 +39,11 @@ async function setupDemoSchedule() {
     const rows = scrapeDemo();
     const pick = (id: number) => rows.find(r => r.course!.uniqueId === id)!;
     const active = [65555, 53780, 23100].map(pick);
+    // distinct course colors, as UT Registration Plus assigns them
+    const colorways = ['indigo', 'red', 'sky', 'teal', 'emerald'] as const;
+    for (const id of [65555, 53780, 23100, 33505, 23095]) {
+        pick(id).course!.colors = getCourseColors(colorways[[65555, 53780, 23100, 33505, 23095].indexOf(id)]!, 500);
+    }
     const schedules = await UserScheduleStore.get('schedules');
     const withoutDemo = schedules.filter(s => s.name !== DEMO_NAME);
     const schedule = new UserSchedule({

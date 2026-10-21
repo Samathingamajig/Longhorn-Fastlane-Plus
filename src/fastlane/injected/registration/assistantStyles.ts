@@ -7,18 +7,18 @@ export const ASSISTANT_CSS = `
   --accent: #bf5700; --accent-ink: #ffffff; --ok: #15803d; --ok-bg: #e8f6ec; --warn: #b45309; --warn-bg: #fdf3e2;
   --bad: #b91c1c; --bad-bg: #fdecec; --info: #1d4ed8; --info-bg: #e8f0ff; --shadow: 0 12px 32px rgba(0,0,0,.18);
   font: 13px/1.45 "Roboto Flex", system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+  color: var(--text); background: color-mix(in srgb, var(--bg) 96%, transparent); backdrop-filter: blur(6px); border: 1px solid var(--border); border-radius: 14px;
   width: 320px; max-height: calc(100vh - 24px); overflow: auto; box-shadow: var(--shadow);
 }
 .fl[data-theme="dark"] {
-  --bg: #121214; --surface: #1b1b1f; --text: #f4f4f5; --muted: #a1a1aa; --border: #2e2e33;
+  --bg: #1f1f23; --surface: #26262b; --text: #f4f4f5; --muted: #a1a1aa; --border: #2e2e33;
   --ok-bg: #0f2a19; --warn-bg: #2d1f08; --bad-bg: #2f1111; --info-bg: #13203f; --shadow: 0 12px 32px rgba(0,0,0,.6);
 }
 @media (prefers-color-scheme: dark) { .fl[data-theme="system"] {
-  --bg: #121214; --surface: #1b1b1f; --text: #f4f4f5; --muted: #a1a1aa; --border: #2e2e33;
+  --bg: #1f1f23; --surface: #26262b; --text: #f4f4f5; --muted: #a1a1aa; --border: #2e2e33;
   --ok-bg: #0f2a19; --warn-bg: #2d1f08; --bad-bg: #2f1111; --info-bg: #13203f; --shadow: 0 12px 32px rgba(0,0,0,.6);
 } }
-.head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background: var(--surface); border-bottom:1px solid var(--border); border-radius: 12px 12px 0 0; }
+.head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 12px; background: var(--surface); border-bottom:1px solid var(--border); border-radius: 14px 14px 0 0; }
 .brand { font-weight: 750; letter-spacing: -.2px; }
 .brand small { display:block; font-weight: 500; color: var(--muted); font-size: 10.5px; }
 .body { padding: 12px; display:flex; flex-direction:column; gap:10px; }
@@ -26,7 +26,7 @@ export const ASSISTANT_CSS = `
 .code { font: 800 34px/1 "Roboto Mono", ui-monospace, monospace; letter-spacing: 2px; color: var(--text); user-select: all; }
 .course { font-weight: 650; }
 .req { font-size: 11.5px; color: var(--muted); }
-button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 7px 9px; }
+button { font: inherit; cursor: pointer; border-radius: 10px; transition: border-color 120ms ease-out, filter 120ms ease-out, background 120ms ease-out; border: 1px solid var(--border); background: var(--bg); color: var(--text); padding: 7px 9px; }
 button:hover:not(:disabled) { border-color: var(--accent); }
 button:focus-visible, select:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
 button:disabled { opacity: .5; cursor: default; }

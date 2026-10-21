@@ -10,6 +10,7 @@ import type { PlannedReminder, ReminderConfig } from '../core/reminders';
 import { ALARM_PREFIX, planReminders } from '../core/reminders';
 import type { SectionRecord } from '../core/sections';
 import { semesterKey } from '../core/sections';
+import bundled from '../data/bundled-datasets.json';
 import { checkForUpdates } from '../data/datasets';
 import { idbDatasetStore, idbGetAll, idbPutMany, STORES } from '../data/idb';
 import { bufferToBase64, isFastlaneRequest } from '../services/runtime';
@@ -86,6 +87,7 @@ export async function runDataCheck(force: boolean) {
         store: idbDatasetStore,
         force,
         online: navigator.onLine,
+        bundled: Object.fromEntries(bundled.datasets.map(d => [d.id, { sha256: d.sha256, publishedAt: d.publishedAt }])),
     });
 }
 

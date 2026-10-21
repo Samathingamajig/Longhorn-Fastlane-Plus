@@ -14,11 +14,12 @@ interface LogoIconProps {
 export function LogoIcon(props: SVGProps<SVGSVGElement>): JSX.Element {
     return (
         // biome-ignore lint/a11y/noSvgWithoutTitle: TODO:
-        <svg width='40' height='40' viewBox='0 0 40 40' fill='none' xmlns='http://www.w3.org/2000/svg' {...props}>
-            <circle cx='20' cy='20' r='20' fill='#BF5700' />
-            <circle cx='20' cy='20' r='15.5' stroke='white' strokeWidth='3' />
-            <rect x='18' y='10' width='4' height='19.5489' fill='white' />
-            <rect x='10' y='22' width='4' height='19.5489' transform='rotate(-90 10 22)' fill='white' />
+        <svg width='40' height='40' viewBox='0 0 128 128' fill='none' xmlns='http://www.w3.org/2000/svg' {...props}>
+            {/* Fastlane mark (replaces the UT Registration Plus logo to avoid implying affiliation) */}
+            <rect x='4' y='4' width='120' height='120' rx='28' fill='#333F48' />
+            <path d='M30 98 L58 30 h14 L50 82 h22 L56 110 Z' fill='#E87722' />
+            <path d='M76 98 L100 38' stroke='#FFFFFF' strokeWidth='9' strokeLinecap='round' opacity='0.9' />
+            <path d='M90 104 L106 64' stroke='#FFFFFF' strokeWidth='7' strokeLinecap='round' opacity='0.45' />
         </svg>
     );
 }
@@ -34,7 +35,7 @@ export function SmallLogo({ className }: LogoIconProps): JSX.Element {
         <div className={clsx('flex items-center gap-2', className)}>
             <LogoIcon />
             <div className='mt-1 flex flex-col text-lg font-medium leading-[1em]'>
-                <p className='text-nowrap text-ut-burntorange'>UT Registration</p>
+                <p className='text-nowrap text-ut-burntorange'>Longhorn Fastlane</p>
                 <p className='text-ut-burntorange'>
                     Plus{' '}
                     <span className='text-xs'>
@@ -57,7 +58,7 @@ export function LargeLogo({ className }: LogoIconProps): JSX.Element {
         <div className={clsx('flex items-center gap-spacing-3', className)}>
             <LogoIcon className='h-12 w-12' />
             <div className='mt-1 flex flex-col text-[1.35rem] font-medium leading-[1em] screenshot:flex'>
-                <p className='text-nowrap text-ut-burntorange'>UT Registration</p>
+                <p className='text-nowrap text-ut-burntorange'>Longhorn Fastlane</p>
                 <p className='text-ut-burntorange'>
                     Plus{' '}
                     <span className='text-sm'>

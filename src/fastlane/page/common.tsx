@@ -1,5 +1,6 @@
 import type { Course } from '@shared/types/Course';
 import type { ReactNode } from 'react';
+import CopyIcon from '~icons/ph/copy';
 
 import type { GradeStat } from '../core/grades';
 import { describeGradeStat, formatPercent, thresholdLabel } from '../core/grades';
@@ -7,6 +8,7 @@ import type { Modality } from '../core/modality';
 import { MODALITY_LABELS } from '../core/modality';
 import type { SectionRecord } from '../core/sections';
 import { formatUnique } from '../core/sections';
+import { COURSE_PALETTE } from '../core/wallpaper';
 
 export function PageHead({ title, subtitle, actions }: { title: string; subtitle?: ReactNode; actions?: ReactNode }) {
     return (
@@ -87,4 +89,38 @@ export function locationsText(section: Pick<SectionRecord, 'meetings'>): string 
 
 export function courseLabel(c: Course): string {
     return `${c.department} ${c.number}`;
+}
+
+/** The course's own UTRP color (distinct per course), falling back to the Fastlane palette. */
+export function sectionColor(section: Pick<SectionRecord, 'course'>, index = 0): string {
+    const colors = (section.course as { colors?: { primaryColor?: string } } | undefined)?.colors;
+    return colors?.primaryColor ?? COURSE_PALETTE[index % COURSE_PALETTE.length]!;
+}
+
+/** UTRP-style unique-number chip that copies on click: ⧉ 65530 */
+export function CodeChip({ id, onColor = false }: { id: number; onColor?: boolean }) {
+    const code = formatUnique(id);
+    return (
+        <button
+            type='button'
+            className={`code-chip ${onColor ? 'on-color' : ''}`}
+            title={`Copy unique number ${code}`}
+            onClick={async e => {
+                const el = e.currentTarget;
+                try {
+                    await navigator.clipboard.writeText(code);
+                    el.dataset.copied = '1';
+                    el.lastChild!.textContent = 'Copied';
+                    setTimeout(() => {
+                        el.lastChild!.textContent = code;
+                    }, 1000);
+                } catch {
+                    /* clipboard blocked; the number stays selectable */
+                }
+            }}
+        >
+            <CopyIcon aria-hidden='true' />
+            <span>{code}</span>
+        </button>
+    );
 }
