@@ -22,20 +22,14 @@ import ExportIcon from '~icons/ph/export';
 import FileCodeIcon from '~icons/ph/file-code';
 import FilePngIcon from '~icons/ph/file-png';
 import FileTextIcon from '~icons/ph/file-text';
-import SidebarIcon from '~icons/ph/sidebar';
 
 import { handleExportJson, saveAsCal, saveAsText, saveCalAsPng } from '../utils';
-
-export interface CalendarHeaderProps {
-    sidebarOpen?: boolean;
-    onSidebarToggle?: () => void;
-}
 
 /**
  * Renders the header component for the calendar.
  * @returns The JSX element representing the calendar header.
  */
-export default function CalendarHeader({ sidebarOpen, onSidebarToggle }: CalendarHeaderProps): JSX.Element {
+export default function CalendarHeader(): JSX.Element {
     const activeSchedule = useActiveSchedule();
     const lastCheckedText = useRelativeTime(activeSchedule.lastCheckedAt);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -93,17 +87,6 @@ export default function CalendarHeader({ sidebarOpen, onSidebarToggle }: Calenda
             style={{ scrollbarGutter: 'auto' }}
             className='sticky left-0 right-0 top-0 z-10 min-h-[75px] flex items-center gap-5 oveflow-x-auto overflow-y-hidden bg-white pl-spacing-7 pt-spacing-5 pb-1'
         >
-            {!sidebarOpen && (
-                <Button
-                    variant='minimal'
-                    size='small'
-                    color='theme-black'
-                    onClick={onSidebarToggle}
-                    className='screenshot:hidden'
-                    icon={SidebarIcon}
-                />
-            )}
-
             <LargeLogo className='hidden! screenshot:flex!' />
             <Divider className='self-center hidden! screenshot:block!' size='2.5rem' orientation='vertical' />
 
