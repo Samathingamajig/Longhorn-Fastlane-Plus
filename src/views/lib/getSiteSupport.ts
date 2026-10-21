@@ -16,6 +16,8 @@ export const SiteSupport = {
     COURSE_CATALOG_SEARCH: 'COURSE_CATALOG_SEARCH',
     CLASSLIST: 'CLASSLIST',
     COURSE_CATALOG_KWS: 'COURSE_CATALOG_KWS',
+    /** Fastlane: UT's registration (add/drop) screens, where the manual assistant appears */
+    REGISTRATION: 'REGISTRATION',
 } as const;
 
 /**
@@ -53,6 +55,9 @@ export default function getSiteSupport(url: string): SiteSupportType | null {
         }
         return SiteSupport.COURSE_CATALOG_SEARCH;
     }
+    if (isRegistrationScreen(url)) {
+        return SiteSupport.REGISTRATION;
+    }
     if (url.includes('utdirect.utexas.edu') && (url.includes('waitlist') || url.includes('classlist'))) {
         return SiteSupport.WAITLIST;
     }
@@ -71,4 +76,19 @@ export default function getSiteSupport(url: string): SiteSupportType | null {
         return SiteSupport.CLASSLIST;
     }
     return null;
+}
+
+/**
+ * Fastlane: UT's add/drop registration screens (not the class list, waitlist, or login pages).
+ */
+export function isRegistrationScreen(url: string): boolean {
+    try {
+        const u = new URL(url);
+        return (
+            u.hostname === 'utdirect.utexas.edu' &&
+            /^\/registration\/(?!classlist|waitlist)[^/]*\.wbx$/i.test(u.pathname)
+        );
+    } catch {
+        return false;
+    }
 }

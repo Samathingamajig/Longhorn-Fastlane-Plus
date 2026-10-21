@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Fastlane offline demo</title>
+        <style>
+            body { font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; margin: 0; background: #f4f2ee; color: #1c1917; }
+            header { background: #333f48; color: #fff; padding: 14px 24px; }
+            header b { color: #ffd6b3; }
+            main { max-width: 1100px; padding: 18px 24px 80px; margin-right: 340px; }
+            section { background: #fff; border: 1px solid #ddd8cf; border-radius: 10px; padding: 16px; margin-bottom: 18px; }
+            h1 { font-size: 20px; margin: 0; }
+            h2 { font-size: 16px; margin: 0 0 6px; }
+            table.results { border-collapse: collapse; width: 100%; font-size: 13px; }
+            table.results th, table.results td { border-bottom: 1px solid #e6e2da; padding: 6px 8px; text-align: left; vertical-align: top; }
+            table.results td span { display: block; }
+            table.results td ul { margin: 0; padding-left: 16px; }
+            td.course_header h2 { font-size: 13px; margin: 6px 0 0; color: #bf5700; }
+            button { font: inherit; padding: 6px 10px; border-radius: 6px; border: 1px solid #c8c2b8; background: #fff; cursor: pointer; }
+            .msg { margin-top: 10px; min-height: 22px; font-weight: 600; }
+            .msg.ok { color: #15803d; } .msg.bad { color: #b91c1c; }
+            .note { color: #57534e; font-size: 13px; }
+            input { font: 16px ui-monospace, monospace; padding: 6px; width: 110px; }
+            @media (max-width: 1100px) { main { margin-right: 0; } }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Longhorn Fastlane Plus — offline demo</h1>
+            <div><b>Not a UT page.</b> These are local fixtures shaped like UT’s course schedule and add/drop screens. Nothing here contacts UT.</div>
+        </header>
+        <main>
+            <section>
+                <h2>1. Set up a demo schedule</h2>
+                <p class="note">Creates a schedule named “Fastlane demo (Ideal)” in your extension (UGS 302 MWF 9, M 408C MWF 10 + TTH 11, MUS 302L live online MW 1) with two ranked backups. Remove it any time.</p>
+                <button id="setupDemo" type="button">Create demo schedule</button>
+                <button id="removeDemo" type="button">Remove demo schedule</button>
+                <div id="setupStatus" class="note" role="status"></div>
+            </section>
+            <section>
+                <h2>2. Course listing with inline grades, async highlighting and conflicts</h2>
+                <p class="note">Grade percentages come from the bundled historical dataset (real counts). Change the threshold in the “Plus” column header. Blue rows are verified asynchronous; “LIVE ONLINE” sections meet at scheduled times. Use “+ Backup” to add ranked backups.</p>
+                <div id="listing"></div>
+            </section>
+            <section>
+                <h2>3. Registration screen simulation</h2>
+                <p class="note">The floating assistant (top right) shows the next code from your queue. Copy it (or turn on autofill in Fastlane → Registration prep), then press the simulated Submit yourself. Use the buttons to simulate UT responses and mark outcomes in the assistant. Your real queue is used: Undo or “Reset progress” afterward.</p>
+                <div id="addDrop"></div>
+                <div style="margin-top:8px">
+                    <button id="simFull" type="button">Simulate “class full”</button>
+                    <button id="simConflict" type="button">Simulate time conflict</button>
+                    <button id="simRestricted" type="button">Simulate restriction</button>
+                    <button id="simClear" type="button">Clear message</button>
+                </div>
+                <div id="result" class="msg" role="alert"></div>
+            </section>
+        </main>
+        <script src="./index.tsx" type="module"></script>
+    </body>
+</html>

@@ -8,6 +8,8 @@ import getSiteSupport, { SiteSupport } from '@views/lib/getSiteSupport';
 import React, { Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { suspendUntilStoresReady } from 'src/lib/chrome-extension-toolkit/storage/createStore';
+import { FastlanePlanStore, FastlaneSettingsStore } from 'src/fastlane/storage/stores';
+import { mountRegistrationAssistant } from 'src/fastlane/injected/registration/mount';
 
 const support = getSiteSupport(window.location.href);
 
@@ -33,7 +35,7 @@ function AddAllButtonBootstrap() {
 
 if (support === SiteSupport.COURSE_CATALOG_DETAILS || support === SiteSupport.COURSE_CATALOG_LIST) {
     renderComponent(() => {
-        suspendUntilStoresReady([UserScheduleStore, OptionsStore]);
+        suspendUntilStoresReady([UserScheduleStore, OptionsStore, FastlaneSettingsStore, FastlanePlanStore]);
 
         return <CourseCatalogMain support={support} />;
     });
@@ -49,4 +51,8 @@ if (support === SiteSupport.COURSE_CATALOG_SEARCH) {
 
 if (support === SiteSupport.COURSE_CATALOG_KWS) {
     renderComponent(ShadedResults);
+}
+
+if (support === SiteSupport.REGISTRATION) {
+    mountRegistrationAssistant();
 }

@@ -51,7 +51,7 @@ export interface Attempt {
     at: number;
     itemId: string;
     uniqueId: number;
-    action: 'copied' | Outcome | 'undo';
+    action: 'copied' | 'autofilled' | Outcome | 'undo';
     source: 'manual' | 'detected';
 }
 
@@ -191,6 +191,16 @@ export function recordCopy(state: QueueState, itemId: string, now = Date.now()):
         ...state,
         pending: { itemId, copiedAt: now },
         history: log(state, { at: now, itemId, uniqueId: item.uniqueId, action: 'copied', source: 'manual' }),
+    };
+}
+
+/** Logs that Fastlane placed this unique number in UT's add field (it never submits). */
+export function recordAutofill(state: QueueState, itemId: string, now = Date.now()): QueueState {
+    const item = getItem(state, itemId);
+    return {
+        ...state,
+        pending: { itemId, copiedAt: now },
+        history: log(state, { at: now, itemId, uniqueId: item.uniqueId, action: 'autofilled', source: 'manual' }),
     };
 }
 

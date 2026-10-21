@@ -24,8 +24,8 @@ export default async function onUpdate() {
 
     // Enable data refreshing and course status indicators by default, since they were previously disabled during beta
     if (schemaVersion < 1) {
+        // Fastlane: keep data refreshing opt-in (no automatic fetching of UT pages)
         await OptionsStore.set({
-            enableDataRefreshing: true,
             enableCourseStatusChips: true,
         });
 

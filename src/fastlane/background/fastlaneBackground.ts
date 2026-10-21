@@ -1,0 +1,157 @@
+/**
+ * Fastlane background responsibilities (MV3 service worker):
+ *  - store/read the local section cache (IndexedDB, extension origin)
+ *  - hand verified downloaded datasets to content scripts
+ *  - schedule registration reminders with chrome.alarms and show chrome.notifications
+ *  - optionally check for static dataset updates at most once per day
+ * No network request here ever goes to a developer-controlled server with student data.
+ */
+import type { PlannedReminder, ReminderConfig } from '../core/reminders';
+import { ALARM_PREFIX, planReminders } from '../core/reminders';
+import type { SectionRecord } from '../core/sections';
+import { semesterKey } from '../core/sections';
+import { checkForUpdates } from '../data/datasets';
+import { idbDatasetStore, idbGetAll, idbPutMany, STORES } from '../data/idb';
+import { bufferToBase64, isFastlaneRequest } from '../services/runtime';
+import { dataManifestConfig } from '../services/dataConfig';
+import { FastlaneReminderStore, FastlaneSettingsStore } from '../storage/stores';
+
+export const UT_REGISTRATION_URL = 'https://utdirect.utexas.edu/registration/chooseSemester.WBX';
+const DATA_ALARM = 'fastlane-data-check';
+const NOTIFICATION_ICON = 'icons/icon_production_128.png';
+
+interface CachedSection extends SectionRecord {
+    key: string;
+    semesterLabel: string;
+}
+
+async function cacheSections(sections: SectionRecord[]): Promise<number> {
+    const rows: CachedSection[] = sections
+        .filter(s => Number.isInteger(s.uniqueId) && typeof s.courseCode === 'string')
+        .slice(0, 500)
+        .map(s => ({ ...s, key: `${s.semester?.code ?? semesterKey(s.semester)}:${s.uniqueId}`, semesterLabel: semesterKey(s.semester) }));
+    await idbPutMany(STORES.sections, rows);
+    return rows.length;
+}
+
+async function getSections(semester: string | null | undefined): Promise<SectionRecord[]> {
+    const all = await idbGetAll<CachedSection>(STORES.sections);
+    return semester ? all.filter(s => s.semesterLabel === semester) : all;
+}
+
+export async function syncReminderAlarms(config?: ReminderConfig): Promise<PlannedReminder[]> {
+    const reminders = config ?? ((await FastlaneReminderStore.get('reminders')) as unknown as ReminderConfig);
+    const existing = await chrome.alarms.getAll();
+    await Promise.all(existing.filter(a => a.name.startsWith(ALARM_PREFIX)).map(a => chrome.alarms.clear(a.name)));
+    let planned: PlannedReminder[] = [];
+    try {
+        planned = planReminders(reminders);
+    } catch (e) {
+        console.warn('[Fastlane] reminder config invalid', e);
+    }
+    for (const r of planned) await chrome.alarms.create(r.id, { when: r.when });
+    return planned;
+}
+
+function notify(id: string, title: string, message: string, withButton = true) {
+    chrome.notifications.create(id, {
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL(NOTIFICATION_ICON),
+        title,
+        message,
+        priority: 2,
+        requireInteraction: id.includes('registration:'),
+        buttons: withButton ? [{ title: 'Open registration assistant' }, { title: 'Open Fastlane plan' }] : undefined,
+    });
+}
+
+async function onAlarm(alarm: chrome.alarms.Alarm) {
+    if (alarm.name === DATA_ALARM) {
+        await runDataCheck(false);
+        return;
+    }
+    if (!alarm.name.startsWith(ALARM_PREFIX)) return;
+    const reminders = (await FastlaneReminderStore.get('reminders')) as unknown as ReminderConfig;
+    // recompute so edits made after scheduling are respected
+    const match = planReminders(reminders, (alarm.scheduledTime ?? Date.now()) - 60_000).find(r => r.id === alarm.name);
+    if (match) notify(`${alarm.name}:${Date.now()}`, match.title, match.message);
+}
+
+export async function runDataCheck(force: boolean) {
+    const settings = await FastlaneSettingsStore.get('dataUpdates');
+    const cfg = dataManifestConfig();
+    return checkForUpdates({
+        manifestUrl: settings ? cfg.manifestUrl : null,
+        allowedHosts: cfg.allowedHosts,
+        store: idbDatasetStore,
+        force,
+        online: navigator.onLine,
+    });
+}
+
+function openTab(url: string) {
+    void chrome.tabs.create({ url });
+}
+
+export function registerFastlaneBackground() {
+    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+        if (!isFastlaneRequest(msg)) return false;
+        const respond = (p: Promise<unknown>) =>
+            p.then(data => sendResponse({ ok: true, data })).catch((e: Error) => sendResponse({ ok: false, error: e.message }));
+        switch (msg.type) {
+            case 'cacheSections':
+                respond(cacheSections(msg.sections));
+                return true;
+            case 'getSections':
+                respond(getSections(msg.semester));
+                return true;
+            case 'getGradesOverride':
+                respond(
+                    idbDatasetStore.getInstalled('grades').then(async installed => {
+                        if (!installed || installed.origin !== 'downloaded') return null;
+                        const payload = await idbDatasetStore.getPayload('grades');
+                        return payload ? { descriptor: installed.descriptor, base64: bufferToBase64(payload) } : null;
+                    })
+                );
+                return true;
+            case 'syncReminders':
+                respond(syncReminderAlarms());
+                return true;
+            case 'testNotification':
+                notify(`fastlane-test:${Date.now()}`, 'Fastlane test notification', 'Reminders are working. You will be notified at the times you chose.');
+                sendResponse({ ok: true });
+                return false;
+            case 'checkDataUpdates':
+                respond(runDataCheck(!!msg.force));
+                return true;
+            case 'openFastlane':
+                openTab(chrome.runtime.getURL(`fastlane.html${msg.tab ? `#${msg.tab}` : ''}`));
+                sendResponse({ ok: true });
+                return false;
+            default:
+                return false;
+        }
+    });
+
+    chrome.alarms.onAlarm.addListener(alarm => void onAlarm(alarm));
+
+    chrome.notifications.onButtonClicked.addListener((id, index) => {
+        openTab(index === 0 ? UT_REGISTRATION_URL : chrome.runtime.getURL('fastlane.html#register'));
+        chrome.notifications.clear(id);
+    });
+    chrome.notifications.onClicked.addListener(id => {
+        if (id.startsWith('fastlane')) openTab(UT_REGISTRATION_URL);
+        chrome.notifications.clear(id);
+    });
+
+    // keep alarms in sync with the saved reminder settings
+    FastlaneReminderStore.subscribe('reminders', ({ newValue }) => {
+        void syncReminderAlarms(newValue as unknown as ReminderConfig);
+    });
+
+    chrome.runtime.onStartup?.addListener(() => void syncReminderAlarms());
+    chrome.runtime.onInstalled.addListener(() => {
+        void syncReminderAlarms();
+        void chrome.alarms.create(DATA_ALARM, { periodInMinutes: 24 * 60, delayInMinutes: 5 });
+    });
+}

@@ -13,13 +13,14 @@ const isBeta = !!process.env.BETA;
 
 if (isBeta && process.env.NODE_ENV !== 'production') throw new Error('Cannot have beta non-production build');
 
+// Fastlane: only UT pages the extension enhances. Upstream's login.utexas.edu match was removed so no
+// script ever runs on UT's sign-in page.
 const HOST_PERMISSIONS: string[] = [
     '*://*.utdirect.utexas.edu/apps/registrar/course_schedule/*',
-    '*://*.utdirect.utexas.edu/registration/classlist/*',
+    '*://*.utdirect.utexas.edu/registration/*',
     '*://*.utexas.collegescheduler.com/*',
     '*://*.catalog.utexas.edu/ribbit/',
     '*://*.registrar.utexas.edu/schedules/*',
-    '*://*.login.utexas.edu/login/*',
     'https://*.bluera.com/rpvlf.aspx*',
     '*://my.utexas.edu/student/*',
 ];
@@ -32,15 +33,18 @@ const manifest = defineManifest(async env => {
     return {
         manifest_version: 3,
         name: `${packageJson.displayName ?? packageJson.name}${nameSuffix}`,
+        short_name: 'Fastlane Plus',
         version: `${major}.${minor}.${patch}.${label}`,
         description: packageJson.description,
         options_page: 'src/pages/options/index.html',
         background: { service_worker: 'src/pages/background/background.ts' },
+        // Fastlane: 'background' removed (not needed in MV3); alarms + notifications power local reminders
         permissions: [
             'storage',
             'unlimitedStorage',
-            'background',
             'scripting',
+            'alarms',
+            'notifications',
             ...(isDev ? (['declarativeNetRequest', 'declarativeNetRequestWithHostAccess'] as const) : []),
         ],
         host_permissions: isDev ? [...HOST_PERMISSIONS, '<all_urls>'] : HOST_PERMISSIONS,
@@ -63,7 +67,8 @@ const manifest = defineManifest(async env => {
         web_accessible_resources: [
             {
                 resources: ['assets/js/*.js', 'assets/css/*.css', 'assets/img/*', 'assets/*.wasm', 'database/*'],
-                matches: ['*://*/*'],
+                // Fastlane: only UT pages may load these (upstream exposed them to every site)
+                matches: ['*://*.utexas.edu/*', '*://*.utexas.collegescheduler.com/*', 'https://*.bluera.com/*'],
             },
         ],
         content_security_policy: {

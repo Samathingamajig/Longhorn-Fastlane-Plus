@@ -52,7 +52,7 @@ function statusFromNumbers(applied?: Progress, remaining?: Progress): Requiremen
 }
 
 function finalizeRequirement(
-    base: Omit<AuditRequirement, 'tags' | 'category' | 'confidence' | 'issues'> & { issues?: string[] },
+    base: Omit<AuditRequirement, 'tags' | 'category' | 'confidence' | 'issues' | 'status'> & { issues?: string[] },
     statusFromMarkup: RequirementStatus | null,
     pendingCourseCodes: Set<string>,
     baseConfidence: Confidence

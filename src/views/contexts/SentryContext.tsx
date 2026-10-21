@@ -62,8 +62,8 @@ export default function SentryProvider({ children, transactionName }: SentryProv
         }
 
         // Standalone extension pages can safely use the global client with tracing.
-        if (!init({ ...SENTRY_OPTIONS, integrations: [browserTracingIntegration()] }))
-            throw new Error('Sentry failed to initialize');
+        // Fastlane: telemetry is disabled by default, so a missing client is expected
+        init({ ...SENTRY_OPTIONS, integrations: SENTRY_OPTIONS.enabled ? [browserTracingIntegration()] : [] });
         return getCurrentScope();
     }, []);
 

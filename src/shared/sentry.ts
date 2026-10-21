@@ -6,8 +6,17 @@ ExtensionStore.get('anonymousId').then(id => {
     anonymousId = id;
 });
 
+/**
+ * Fastlane: error telemetry is OFF. Upstream UT Registration Plus reports errors to its own Sentry
+ * project; this fork sends nothing unless a maintainer deliberately builds with VITE_SENTRY_DSN set
+ * (which would also require updating the privacy policy and store disclosures first).
+ */
+const FASTLANE_SENTRY_DSN = (import.meta.env.VITE_SENTRY_DSN as string | undefined) || undefined;
+
 export const SENTRY_OPTIONS = {
-    dsn: 'https://ed1a50d8626ff6be35b98d7b1ec86d9d@o4508033820852224.ingest.us.sentry.io/4508033822490624',
+    dsn: FASTLANE_SENTRY_DSN,
+    enabled: !!FASTLANE_SENTRY_DSN,
+    sendDefaultPii: false,
     skipBrowserExtensionCheck: true,
     tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.2,
     debug: false,

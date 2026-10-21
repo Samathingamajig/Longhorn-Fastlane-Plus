@@ -61,6 +61,8 @@ export function coreTagFromListing(value: string): string | null {
     const lower = value.toLowerCase().replace(/\s+/g, ' ').trim();
     const explicit = coreCodesInText(lower);
     if (explicit.length) return coreTag(explicit[0]!);
+    const bare = lower.match(/^\(?(0\d{2})\)?$/);
+    if (bare && CORE_BY_CODE.has(bare[1]!)) return coreTag(bare[1]!);
     const ordered = [CORE_BY_CODE.get('093')!, ...CORE_COMPONENTS.filter(c => c.code !== '093')];
     for (const component of ordered) {
         if (component.aliases.some(alias => lower.includes(alias))) {

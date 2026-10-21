@@ -404,7 +404,13 @@ export class CourseCatalogScraper {
             const hourText = hourLines[i]?.textContent || '';
             const locationText = locLines[i]?.textContent || '';
 
-            schedule.meetings.push(CourseSchedule.parse(dayText, hourText, locationText));
+            // Fastlane: a TBA/partial meeting line must not break the whole listing. It is skipped here;
+            // Fastlane's own row analysis marks the section's times as incomplete (conflict "unknown").
+            try {
+                schedule.meetings.push(CourseSchedule.parse(dayText, hourText, locationText));
+            } catch {
+                console.debug('[UTRP] skipped unparseable meeting', dayText, hourText);
+            }
         }
 
         return schedule;

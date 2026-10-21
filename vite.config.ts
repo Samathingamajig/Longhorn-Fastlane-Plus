@@ -241,6 +241,8 @@ export default defineConfig({
         renameFile('src/pages/report/index.html', 'report.html'),
         renameFile('src/pages/map/index.html', 'map.html'),
         renameFile('src/pages/404/index.html', '404.html'),
+        renameFile('src/pages/fastlane/index.html', 'fastlane.html'),
+        renameFile('src/pages/demo/index.html', 'demo.html'),
         sentryToolbarPlugin(),
         UnoCSS(),
         buildLogger({
@@ -305,6 +307,10 @@ export default defineConfig({
                 target: 'http://localhost:5173',
                 rewrite: path => path.replace('map', 'src/pages/map/index'),
             },
+            '/fastlane.html': {
+                target: 'http://localhost:5173',
+                rewrite: path => path.replace('fastlane', 'src/pages/fastlane/index'),
+            },
             '/404.html': {
                 target: 'http://localhost:5173',
                 rewrite: path => path.replace('404', 'src/pages/404/index'),
@@ -327,6 +333,8 @@ export default defineConfig({
                 report: 'src/pages/report/index.html',
                 map: 'src/pages/map/index.html',
                 404: 'src/pages/404/index.html',
+                fastlane: 'src/pages/fastlane/index.html',
+                demo: 'src/pages/demo/index.html',
             },
             output: {
                 chunkFileNames: `assets/[name]-[hash].js`,

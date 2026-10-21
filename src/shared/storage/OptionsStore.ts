@@ -42,7 +42,8 @@ export const OptionsStore = createSyncStore<IOptionsStore>(
         enableCourseStatusChips: true,
         enableHighlightConflicts: true,
         enableScrollToLoad: true,
-        enableDataRefreshing: true,
+        // Fastlane: off by default so UT pages are only fetched when the student asks
+        enableDataRefreshing: false,
         alwaysOpenCalendarInNewTab: false,
         enableReducedMotion: false,
         showCalendarSidebar: true,

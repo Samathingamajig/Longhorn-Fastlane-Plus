@@ -13,17 +13,22 @@ import getCourseTableRows from '@views/lib/getCourseTableRows';
 import type { SiteSupportType } from '@views/lib/getSiteSupport';
 import { populateSearchInputs } from '@views/lib/populateSearchInputs';
 import React, { useEffect, useRef, useState } from 'react';
+import { CatalogHeader, useCacheVisibleSections } from 'src/fastlane/injected/CatalogHeader';
 
 import DialogProvider from './common/DialogProvider/DialogProvider';
 
 interface Props {
     support: Extract<SiteSupportType, 'COURSE_CATALOG_DETAILS' | 'COURSE_CATALOG_LIST'>;
+    /** Fastlane demo page: URL to scrape as (defaults to the current page) */
+    pageUrl?: string;
+    /** Fastlane demo page: never fetch further UT result pages */
+    disableAutoLoad?: boolean;
 }
 
 /**
  * This is the top level react component orchestrating the course catalog page.
  */
-export default function CourseCatalogMain({ support }: Props): React.JSX.Element | null {
+export default function CourseCatalogMain({ support, pageUrl, disableAutoLoad }: Props): React.JSX.Element | null {
     const [rows, setRows] = React.useState<ScrapedRow[]>([]);
     const [course, setCourse] = useState<Course | null>(null);
     const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -38,13 +43,13 @@ export default function CourseCatalogMain({ support }: Props): React.JSX.Element
 
     useEffect(() => {
         const tableRows = getCourseTableRows(document);
-        const ccs = new CourseCatalogScraper(support);
+        const ccs = new CourseCatalogScraper(support, document, pageUrl);
         const scrapedRows = ccs.scrape(tableRows, true);
         setRows(scrapedRows);
         prevCourseTitleRef.current =
             scrapedRows.findLast(row => row.course === null)?.element.querySelector('.course_header')?.textContent ??
             null;
-    }, [support]);
+    }, [support, pageUrl]);
 
     const addRows = (newRows: ScrapedRow[]) => {
         newRows.forEach(row => {
@@ -68,6 +73,7 @@ export default function CourseCatalogMain({ support }: Props): React.JSX.Element
     };
 
     const activeSchedule = useActiveSchedule();
+    useCacheVisibleSections(rows);
 
     if (!activeSchedule) {
         return null;
@@ -78,7 +84,9 @@ export default function CourseCatalogMain({ support }: Props): React.JSX.Element
             <DialogProvider>
                 <NewSearchLink />
                 <RecruitmentBanner />
-                <TableHead>Plus</TableHead>
+                <TableHead>
+                    <CatalogHeader />
+                </TableHead>
                 {rows.map(
                     row =>
                         row.course && (
@@ -99,7 +107,7 @@ export default function CourseCatalogMain({ support }: Props): React.JSX.Element
                         afterLeave={() => setCourse(null)}
                     />
                 )}
-                {enableScrollToLoad && <AutoLoad addRows={addRows} />}
+                {enableScrollToLoad && !disableAutoLoad && <AutoLoad addRows={addRows} />}
             </DialogProvider>
         </ExtensionRoot>
     );

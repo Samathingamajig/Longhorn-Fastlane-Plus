@@ -1,6 +1,8 @@
 import DB_FILE_URL from '@assets/database/grade_distributions.db?url';
 import initSqlJs from 'sql.js/dist/sql-wasm';
 import WASM_FILE_URL from 'sql.js/dist/sql-wasm.wasm?url';
+import { setActiveGradeDataset } from 'src/fastlane/data/activeGradeDataset';
+import { loadGradesOverride } from 'src/fastlane/services/dataConfig';
 // import WASM_FILE_URL from '../../../../public/database/sql-wasm.wasm?url';
 
 /**
@@ -26,13 +28,32 @@ export async function initializeDB(): Promise<Database> {
         throw new Error('WASM_FILE_URL or DB_FILE_URL is undefined');
     }
 
-    const [{ Database }, dbBuffer] = await Promise.all([
+    const [{ Database }, override] = await Promise.all([
         initSqlJs({
             locateFile: () => WASM_FILE_URL,
         }),
-        fetch(DB_FILE_URL).then(res => res.arrayBuffer()),
+        // Fastlane: a verified downloaded dataset (SHA-256 checked) replaces the bundled one when present
+        loadGradesOverride(),
     ]);
 
+    if (override) {
+        try {
+            const candidate = new Database(new Uint8Array(override.buffer));
+            candidate.exec('SELECT 1 FROM grade_distributions LIMIT 1');
+            db = candidate;
+            setActiveGradeDataset({
+                version: override.descriptor.version,
+                updated: override.descriptor.publishedAt.slice(0, 10),
+                source: override.descriptor.source,
+                origin: 'downloaded',
+            });
+            return db;
+        } catch (e) {
+            console.warn('[Fastlane] downloaded grade dataset unusable, using bundled data', e);
+        }
+    }
+
+    const dbBuffer = await fetch(DB_FILE_URL).then(res => res.arrayBuffer());
     db = new Database(new Uint8Array(dbBuffer));
 
     return db;

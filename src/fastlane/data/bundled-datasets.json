@@ -1,0 +1,22 @@
+{
+    "manifestVersion": 1,
+    "generatedBy": "scripts/fastlane/dataset-manifest.mjs",
+    "datasets": [
+        {
+            "id": "grades",
+            "version": "bundled-70ef69098cf0",
+            "schemaVersion": 1,
+            "format": "sqlite",
+            "sha256": "70ef69098cf0439e92c72b010060a5e7acb9656c23615c91bf61579645e2fea5",
+            "bytes": 13078528,
+            "publishedAt": "2026-10-20T00:00:00Z",
+            "rows": 81255,
+            "firstSemester": "Fall 2019",
+            "latestSemester": "Summer 2026",
+            "semesterCount": 21,
+            "source": "UT Austin grade distribution reports, compiled by UT_Grade_Parser and redistributed in UT Registration Plus",
+            "sourceUrl": "https://github.com/doprz/UT_Grade_Parser",
+            "license": "Public university records; see docs/DATA_SOURCES.md"
+        }
+    ]
+}

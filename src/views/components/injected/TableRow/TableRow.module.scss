@@ -101,3 +101,13 @@
         font-weight: normal;
     }
 }
+
+// Fastlane: verified asynchronous online sections (internet mode, no meeting times, no physical room)
+.isAsync:not(.selectedRow) {
+    > * {
+        background-color: #e8f0ff !important;
+    }
+    > td:first-child {
+        box-shadow: inset 4px 0 0 #1d4ed8;
+    }
+}

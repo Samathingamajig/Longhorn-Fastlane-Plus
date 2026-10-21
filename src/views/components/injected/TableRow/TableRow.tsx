@@ -4,7 +4,12 @@ import type { UserSchedule } from '@shared/types/UserSchedule';
 import ConflictsWithWarning from '@views/components/common/ConflictsWithWarning';
 import ExtensionRoot from '@views/components/common/ExtensionRoot/ExtensionRoot';
 import type { JSX } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { analyzeRow, scheduleTimes, sectionFromCourse } from 'src/fastlane/adapters/utrp';
+import { detectConflicts } from 'src/fastlane/core/meetings';
+import { toSectionTimes } from 'src/fastlane/core/sections';
+import RowInsights from 'src/fastlane/injected/RowInsights';
+import { FastlaneSettingsStore } from 'src/fastlane/storage/stores';
 import { createPortal } from 'react-dom';
 import ChartBarFillIcon from '~icons/ph/chart-bar-fill';
 
@@ -66,18 +71,36 @@ export default function TableRow({ row, isSelected, activeSchedule, onClick }: P
         };
     }, [activeSchedule, course, element.classList]);
 
+    // Fastlane: read meeting lines and instruction mode from the visible row once
+    const rowAnalysis = useMemo(() => analyzeRow(element), [element]);
+    const highlightAsync = FastlaneSettingsStore.useStore(store => store.highlightAsync);
+
+    // Fastlane: every meeting (lecture, lab, discussion) is compared; incomplete times give "unknown"
+    const conflictResult = useMemo(() => {
+        if (!activeSchedule || !course || activeSchedule.containsCourse(course)) return null;
+        const candidate = toSectionTimes(sectionFromCourse(course, rowAnalysis));
+        return detectConflicts(candidate, scheduleTimes(activeSchedule, course.uniqueId));
+    }, [activeSchedule, course, rowAnalysis]);
+
+    useEffect(() => {
+        const isAsync = highlightAsync && rowAnalysis.modality.modality === 'async-online';
+        // biome-ignore lint/style/noNonNullAssertion: CSS module class
+        element.classList[isAsync ? 'add' : 'remove'](styles.isAsync!);
+        return () => {
+            // biome-ignore lint/style/noNonNullAssertion: CSS module class
+            element.classList.remove(styles.isAsync!);
+        };
+    }, [element, highlightAsync, rowAnalysis]);
+
     useEffect(() => {
         if (!activeSchedule || !course) {
             return;
         }
 
-        const conflicts: Course[] = [];
-
-        for (const c of activeSchedule.courses) {
-            if (c.uniqueId !== course.uniqueId && course.getConflicts(c).length > 0) {
-                conflicts.push(c);
-            }
-        }
+        const conflictIds = new Set(
+            (conflictResult?.status === 'conflict' ? conflictResult.conflicts : []).map(c => c.with.uniqueId)
+        );
+        const conflicts: Course[] = activeSchedule.courses.filter(c => conflictIds.has(c.uniqueId));
 
         // Clear conflict styling
         // biome-ignore lint/style/noNonNullAssertion: TODO:
@@ -100,7 +123,7 @@ export default function TableRow({ row, isSelected, activeSchedule, onClick }: P
             element.classList.remove(styles.isConflict!);
             setConflicts([]);
         };
-    }, [activeSchedule, course, element.classList, highlightConflicts]);
+    }, [activeSchedule, course, element.classList, highlightConflicts, conflictResult]);
 
     if (!container) {
         return null;
@@ -108,11 +131,22 @@ export default function TableRow({ row, isSelected, activeSchedule, onClick }: P
 
     return createPortal(
         <ExtensionRoot>
-            <div className='relative'>
+            <div className='relative flex items-center gap-1'>
+                {course && (
+                    <RowInsights
+                        course={course}
+                        modality={rowAnalysis.modality}
+                        conflict={conflictResult}
+                        activeSchedule={activeSchedule}
+                        rowAnalysis={rowAnalysis}
+                    />
+                )}
                 <button
                     type='button'
-                    className='m1 h-6 w-6 flex items-center justify-center rounded bg-ut-burntorange color-white! cursor-pointer'
+                    className='m1 h-6 w-6 flex shrink-0 items-center justify-center rounded bg-ut-burntorange color-white! cursor-pointer'
                     onClick={onClick}
+                    title='Historical grade distribution graph'
+                    aria-label='Open historical grade distribution graph'
                 >
                     <ChartBarFillIcon className='text-ut-white h-4 w-4' />
                 </button>

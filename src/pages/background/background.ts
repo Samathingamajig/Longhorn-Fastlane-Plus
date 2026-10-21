@@ -78,6 +78,10 @@ import userScheduleHandler from './handler/userScheduleHandler';
 
 onServiceWorkerAlive();
 
+import { registerFastlaneBackground } from 'src/fastlane/background/fastlaneBackground';
+
+registerFastlaneBackground();
+
 chrome.tabs.onRemoved.addListener(async tabId => {
     const storage = await chrome.storage.session.get('calendarTabs');
     const calendarTabs = (storage.calendarTabs as Record<string, unknown> | undefined) ?? {};
@@ -130,9 +134,12 @@ const messageListener = new MessageListener<BACKGROUND_MESSAGES>({
 
 messageListener.listen({ onError: error => captureException(error) });
 
-void chrome.runtime.setUninstallURL(UNINSTALL_REVIEW_URL).catch(e => {
-    console.error('Error setting uninstall URL:', e);
-});
+// Fastlane: no uninstall page by default (the upstream page belongs to UT Registration Plus)
+if (UNINSTALL_REVIEW_URL) {
+    void chrome.runtime.setUninstallURL(UNINSTALL_REVIEW_URL).catch(e => {
+        console.error('Error setting uninstall URL:', e);
+    });
+}
 
 UserScheduleStore.subscribe('schedules', async schedules => {
     const index = await UserScheduleStore.get('activeIndex');

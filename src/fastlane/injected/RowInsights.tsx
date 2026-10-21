@@ -1,0 +1,222 @@
+/**
+ * Compact, always-visible insights next to UT Registration Plus's grade-graph button:
+ *   72.4% ≥A- · Prof   |  ASYNC  |  Conflicts: C S 314 (52345)  |  + Backup
+ * Rendered inside UTRP's shadow-root portal for the row.
+ */
+import type { Course } from '@shared/types/Course';
+import type { UserSchedule } from '@shared/types/UserSchedule';
+import clsx from 'clsx';
+import { useEffect, useMemo, useState } from 'react';
+
+import { gradeStatFrom, lookupGrades, sectionFromCourse } from '../adapters/utrp';
+import type { GradeStat } from '../core/grades';
+import { describeGradeStat, formatPercent, thresholdLabel } from '../core/grades';
+import type { ConflictResult } from '../core/meetings';
+import { conflictingSections, formatMeeting } from '../core/meetings';
+import type { ModalityResult } from '../core/modality';
+import { DuplicateSectionError, findSection } from '../core/plans';
+import { addBackupFor, loadPlan } from '../services/planService';
+import { FastlanePlanStore, FastlaneSettingsStore } from '../storage/stores';
+
+interface Props {
+    course: Course;
+    modality: ModalityResult;
+    conflict: ConflictResult | null;
+    activeSchedule?: UserSchedule;
+    rowAnalysis: Parameters<typeof sectionFromCourse>[1];
+}
+
+function GradeChip({ course }: { course: Course }) {
+    const threshold = FastlaneSettingsStore.useStore(s => s.gradeThreshold);
+    const [raw, setRaw] = useState<Awaited<ReturnType<typeof lookupGrades>> | undefined>(undefined);
+
+    useEffect(() => {
+        let alive = true;
+        // grade work is deferred to idle time so long listings stay responsive
+        const run = () =>
+            lookupGrades(course).then(r => {
+                if (alive) setRaw(r);
+            });
+        const idle = (globalThis as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+        if (idle) idle(run);
+        else setTimeout(run, 0);
+        return () => {
+            alive = false;
+        };
+    }, [course]);
+
+    const stat: GradeStat | null = useMemo(() => (raw ? gradeStatFrom(course, raw, threshold) : null), [raw, course, threshold]);
+
+    if (raw === undefined) {
+        return <span className='fl-chip text-[11px] text-gray-400 px-1'>…</span>;
+    }
+    if (!stat) {
+        return (
+            <span
+                className='inline-flex items-center rounded border border-dashed border-gray-300 px-1.5 py-0.5 text-[11px] text-gray-500 whitespace-nowrap'
+                title='No verified historical grade data for this course in the bundled dataset. Nothing is estimated.'
+                aria-label='No historical grade data'
+            >
+                No grade data
+            </span>
+        );
+    }
+    const instructor = stat.scope === 'instructor';
+    return (
+        <span
+            className={clsx(
+                'inline-flex items-baseline gap-1 rounded px-1.5 py-0.5 text-[11px] leading-tight whitespace-nowrap',
+                instructor
+                    ? 'bg-[#BF5700]/10 text-[#7a3800] border border-[#BF5700]/40'
+                    : 'border border-dashed border-gray-400 text-gray-700'
+            )}
+            title={describeGradeStat(stat)}
+            aria-label={describeGradeStat(stat).replace(/\n/g, '. ')}
+            data-fastlane='grade'
+        >
+            <strong className='text-[12px]'>{formatPercent(stat.result.percent)}</strong>
+            <span>{thresholdLabel(stat.result.threshold)}</span>
+            <span className='opacity-70'>· {instructor ? 'Prof' : 'All profs'}</span>
+            {stat.smallSample && <span className='opacity-70'>· n={stat.result.graded}</span>}
+        </span>
+    );
+}
+
+function ModalityChip({ modality }: { modality: ModalityResult }) {
+    const title = modality.reasons.join('\n');
+    if (modality.modality === 'async-online') {
+        return (
+            <span className='rounded bg-[#1d4ed8] px-1.5 py-0.5 text-[10px] font-bold text-white whitespace-nowrap' title={title} data-fastlane='async'>
+                ASYNC ONLINE
+            </span>
+        );
+    }
+    if (modality.modality === 'live-online') {
+        return (
+            <span
+                className='rounded border border-[#7c3aed] px-1.5 py-0.5 text-[10px] font-bold text-[#6d28d9] whitespace-nowrap'
+                title={title}
+                data-fastlane='live-online'
+            >
+                LIVE ONLINE
+            </span>
+        );
+    }
+    if (modality.modality === 'unknown' && /internet|online/i.test(title)) {
+        return (
+            <span className='rounded border border-gray-400 px-1.5 py-0.5 text-[10px] text-gray-600 whitespace-nowrap' title={title}>
+                ONLINE · TIMES UNCLEAR
+            </span>
+        );
+    }
+    return null;
+}
+
+function ConflictChip({ conflict }: { conflict: ConflictResult }) {
+    if (conflict.status === 'conflict') {
+        const sections = conflictingSections(conflict);
+        const detail = conflict.conflicts
+            .map(c => `${c.with.label}: ${formatMeeting(c.otherMeeting)} overlaps ${formatMeeting(c.candidateMeeting)}`)
+            .join('\n');
+        return (
+            <span
+                className='rounded bg-[#b91c1c] px-1.5 py-0.5 text-[10px] font-semibold text-white whitespace-nowrap'
+                title={`Conflicts with your active schedule:\n${detail}`}
+                data-fastlane='conflict'
+            >
+                Conflicts: {sections.map(s => s.label).join(', ')}
+            </span>
+        );
+    }
+    if (conflict.status === 'unknown') {
+        const why = conflict.candidateIncomplete
+            ? 'This section’s meeting times are incomplete or TBA.'
+            : `Times are incomplete for: ${conflict.unknownWith.map(s => s.label).join(', ')}.`;
+        return (
+            <span
+                className='rounded border border-[#b45309] px-1.5 py-0.5 text-[10px] font-semibold text-[#92400e] whitespace-nowrap'
+                title={`Conflict status unknown. ${why}`}
+                data-fastlane='conflict-unknown'
+            >
+                Conflict ?
+            </span>
+        );
+    }
+    return null;
+}
+
+function BackupButton({ course, activeSchedule, rowAnalysis }: Pick<Props, 'course' | 'activeSchedule' | 'rowAnalysis'>) {
+    const plans = FastlanePlanStore.useStore(s => s.plans) as unknown as Record<string, import('../core/plans').PlanMeta>;
+    const [open, setOpen] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
+    if (!activeSchedule || activeSchedule.containsCourse(course)) return null;
+    const plan = plans[activeSchedule.id];
+    const existing = plan ? findSection(plan, course.uniqueId) : null;
+    if (existing && existing.index > 0) {
+        const primary = existing.slot.candidates.find(c => c.uniqueId === existing.slot.activeUniqueId);
+        return (
+            <span className='rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-700 whitespace-nowrap' data-fastlane='backup-badge'>
+                Backup #{existing.index} for {primary?.courseCode}
+            </span>
+        );
+    }
+    if (activeSchedule.courses.length === 0) return null;
+
+    const add = async (forUniqueId: number) => {
+        try {
+            await loadPlan(activeSchedule);
+            await addBackupFor(activeSchedule.id, forUniqueId, sectionFromCourse(course, rowAnalysis));
+            setMessage('Saved as backup');
+        } catch (e) {
+            setMessage(e instanceof DuplicateSectionError ? 'Already in plan' : (e as Error).message);
+        }
+        setOpen(false);
+    };
+
+    return (
+        <span className='relative inline-flex'>
+            <button
+                type='button'
+                className='rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#333f48] hover:border-[#BF5700] whitespace-nowrap'
+                onClick={e => {
+                    e.stopPropagation();
+                    setOpen(o => !o);
+                }}
+                aria-expanded={open}
+                title='Save this section as a ranked backup for one of your planned classes. Backups never count toward your active schedule.'
+            >
+                {message ?? '+ Backup'}
+            </button>
+            {open && (
+                <span className='absolute right-0 top-6 z-50 flex min-w-56 flex-col rounded-md border border-gray-200 bg-white p-1 shadow-lg'>
+                    <span className='px-2 py-1 text-[10px] font-bold uppercase text-gray-500'>Backup for…</span>
+                    {activeSchedule.courses.map(c => (
+                        <button
+                            key={c.uniqueId}
+                            type='button'
+                            className='rounded px-2 py-1 text-left text-[11px] text-gray-800 hover:bg-gray-100'
+                            onClick={e => {
+                                e.stopPropagation();
+                                void add(c.uniqueId);
+                            }}
+                        >
+                            {c.department} {c.number} · {String(c.uniqueId).padStart(5, '0')}
+                        </button>
+                    ))}
+                </span>
+            )}
+        </span>
+    );
+}
+
+export default function RowInsights({ course, modality, conflict, activeSchedule, rowAnalysis }: Props) {
+    const settings = FastlaneSettingsStore.useStore(s => s);
+    return (
+        <span className='inline-flex flex-wrap items-center gap-1 py-0.5' data-fastlane='row'>
+            {settings.showInlineGrades && <GradeChip course={course} />}
+            {settings.highlightAsync && <ModalityChip modality={modality} />}
+            {settings.showConflictDetails && conflict && <ConflictChip conflict={conflict} />}
+            <BackupButton course={course} activeSchedule={activeSchedule} rowAnalysis={rowAnalysis} />
+        </span>
+    );
+}

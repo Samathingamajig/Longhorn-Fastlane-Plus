@@ -1,10 +1,10 @@
 {
-    "name": "ut-registration-plus",
-    "displayName": "UT Registration Plus",
-    "version": "2.4.1",
-    "description": "UT Registration Plus is a Chrome extension that allows students to easily register for classes.",
+    "name": "longhorn-fastlane-plus",
+    "displayName": "Longhorn Fastlane Plus",
+    "version": "1.0.0",
+    "description": "Independent UT Austin planner: inline grade %, async & conflict highlights, ranked backups, local IDA import, registration helper.",
     "private": true,
-    "homepage": "https://github.com/Longhorn-Developers/UT-Registration-Plus",
+    "homepage": "https://github.com/SimpSlader/Longhorn-Fastlane-Plus",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -28,7 +28,12 @@
         "preinstall": "npx only-allow pnpm",
         "storybook": "storybook dev -p 6006",
         "build-storybook": "storybook build",
-        "prepare": "husky"
+        "prepare": "husky",
+        "test:run": "vitest run",
+        "data:manifest": "node scripts/fastlane/dataset-manifest.mjs",
+        "data:check": "node scripts/fastlane/dataset-manifest.mjs --check",
+        "security:check": "node scripts/fastlane/security-check.mjs dist",
+        "package:fastlane": "pnpm build && node scripts/fastlane/security-check.mjs dist && node scripts/fastlane/package.mjs"
     },
     "dependencies": {
         "@date-fns/tz": "^1.4.1",
@@ -51,6 +56,7 @@
         "highcharts-react-official": "^3.2.3",
         "html-to-image": "^1.11.13",
         "nanoid": "^5.1.7",
+        "pdfjs-dist": "4.10.38",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
         "react-loading-skeleton": "^3.5.0",
@@ -69,6 +75,7 @@
         "@iconify-json/iconoir": "^1.2.10",
         "@iconify-json/material-symbols": "^1.2.65",
         "@iconify-json/ph": "^1.2.2",
+        "@playwright/test": "^1.64.1",
         "@semantic-release/exec": "^7.1.0",
         "@sentry/toolbar": "1.0.0-beta.11",
         "@storybook/addon-designs": "^11.1.4",
@@ -131,5 +138,16 @@
         "overrides": {},
         "onlyBuiltDependencies": []
     },
-    "packageManager": "pnpm@10.33.0"
+    "packageManager": "pnpm@10.33.0",
+    "upstream": {
+        "utRegistrationPlus": {
+            "repo": "https://github.com/Longhorn-Developers/UT-Registration-Plus",
+            "version": "2.4.1",
+            "commit": "1e3f278"
+        },
+        "degreeAuditPlus": {
+            "repo": "https://github.com/Longhorn-Developers/Degree-Audit-Plus",
+            "commit": "83e02658931908e062f3b3217da7d8e836d888cc"
+        }
+    }
 }
