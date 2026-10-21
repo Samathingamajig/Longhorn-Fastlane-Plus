@@ -227,3 +227,4 @@ e2e/*-snapshots/
 test-results/
 playwright-report/
 package/
+reports/

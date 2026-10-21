@@ -22,7 +22,7 @@ jobs:
       - name: Type check
         run: pnpm check-types
       - name: Unit tests
-        run: pnpm vitest run --reporter=default --reporter=json --outputFile=test-results/unit-results.json
+        run: pnpm vitest run --reporter=default --reporter=json --outputFile=reports/unit-results.json
       - name: Bundled dataset manifest is current
         run: pnpm data:check
       - name: Build
@@ -41,5 +41,6 @@ jobs:
           name: fastlane-build-${{ github.sha }}
           path: |
             package/
+            reports/
             test-results/
             store-assets/screenshots/
