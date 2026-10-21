@@ -13,8 +13,8 @@ import { semesterKey } from '../core/sections';
 import bundled from '../data/bundled-datasets.json';
 import { checkForUpdates } from '../data/datasets';
 import { idbDatasetStore, idbGetAll, idbPutMany, STORES } from '../data/idb';
-import { bufferToBase64, isFastlaneRequest } from '../services/runtime';
 import { dataManifestConfig } from '../services/dataConfig';
+import { bufferToBase64, isFastlaneRequest } from '../services/runtime';
 import { FastlaneReminderStore, FastlaneSettingsStore } from '../storage/stores';
 
 export const UT_REGISTRATION_URL = 'https://utdirect.utexas.edu/registration/chooseSemester.WBX';
@@ -30,7 +30,11 @@ async function cacheSections(sections: SectionRecord[]): Promise<number> {
     const rows: CachedSection[] = sections
         .filter(s => Number.isInteger(s.uniqueId) && typeof s.courseCode === 'string')
         .slice(0, 500)
-        .map(s => ({ ...s, key: `${s.semester?.code ?? semesterKey(s.semester)}:${s.uniqueId}`, semesterLabel: semesterKey(s.semester) }));
+        .map(s => ({
+            ...s,
+            key: `${s.semester?.code ?? semesterKey(s.semester)}:${s.uniqueId}`,
+            semesterLabel: semesterKey(s.semester),
+        }));
     await idbPutMany(STORES.sections, rows);
     return rows.length;
 }
@@ -87,7 +91,9 @@ export async function runDataCheck(force: boolean) {
         store: idbDatasetStore,
         force,
         online: navigator.onLine,
-        bundled: Object.fromEntries(bundled.datasets.map(d => [d.id, { sha256: d.sha256, publishedAt: d.publishedAt }])),
+        bundled: Object.fromEntries(
+            bundled.datasets.map(d => [d.id, { sha256: d.sha256, publishedAt: d.publishedAt }])
+        ),
     });
 }
 
@@ -99,7 +105,9 @@ export function registerFastlaneBackground() {
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         if (!isFastlaneRequest(msg)) return false;
         const respond = (p: Promise<unknown>) =>
-            p.then(data => sendResponse({ ok: true, data })).catch((e: Error) => sendResponse({ ok: false, error: e.message }));
+            p
+                .then(data => sendResponse({ ok: true, data }))
+                .catch((e: Error) => sendResponse({ ok: false, error: e.message }));
         switch (msg.type) {
             case 'cacheSections':
                 respond(cacheSections(msg.sections));
@@ -120,7 +128,11 @@ export function registerFastlaneBackground() {
                 respond(syncReminderAlarms());
                 return true;
             case 'testNotification':
-                notify(`fastlane-test:${Date.now()}`, 'Fastlane test notification', 'Reminders are working. You will be notified at the times you chose.');
+                notify(
+                    `fastlane-test:${Date.now()}`,
+                    'Fastlane test notification',
+                    'Reminders are working. You will be notified at the times you chose.'
+                );
                 sendResponse({ ok: true });
                 return false;
             case 'checkDataUpdates':
