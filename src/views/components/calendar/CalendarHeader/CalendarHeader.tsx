@@ -25,11 +25,16 @@ import FileTextIcon from '~icons/ph/file-text';
 
 import { handleExportJson, saveAsCal, saveAsText, saveCalAsPng } from '../utils';
 
+export interface CalendarHeaderProps {
+    sidebarOpen?: boolean;
+    onSidebarToggle?: () => void;
+}
+
 /**
  * Renders the header component for the calendar.
  * @returns The JSX element representing the calendar header.
  */
-export default function CalendarHeader(): JSX.Element {
+export default function CalendarHeader(_props: CalendarHeaderProps): JSX.Element {
     const activeSchedule = useActiveSchedule();
     const lastCheckedText = useRelativeTime(activeSchedule.lastCheckedAt);
     const [isRefreshing, setIsRefreshing] = useState(false);
