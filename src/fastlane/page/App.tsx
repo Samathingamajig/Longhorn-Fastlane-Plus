@@ -31,10 +31,10 @@ import SettingsTab from './SettingsTab';
 import WallpaperTab from './WallpaperTab';
 
 const TABS = [
-    ['plan', 'Schedule & backups', CalendarDotsIcon],
-    ['recommend', 'Recommendations', SparkleIcon],
-    ['audit', 'Degree audit', ListChecksIcon],
-    ['register', 'Registration prep', LightningIcon],
+    ['plan', 'My classes & backups', CalendarDotsIcon],
+    ['recommend', 'Find classes for my degree', SparkleIcon],
+    ['audit', 'My degree progress', ListChecksIcon],
+    ['register', 'Get ready to register', LightningIcon],
     ['map', 'Campus map', MapTrifoldIcon],
     ['wallpaper', 'Phone wallpaper', DeviceMobileIcon],
     ['settings', 'Settings & privacy', GearSixIcon],
@@ -119,7 +119,7 @@ function Workspace() {
                             aria-pressed={s.id === active?.id}
                         >
                             <span className={`radio ${s.id === active?.id ? 'on' : ''}`} />
-                            <span>{s.name}</span>
+                            <span>{s.name} <span className='small muted'>({s.courses.length})</span></span>
                             {plans[s.id] && plans[s.id]!.kind !== 'custom' && (
                                 <span className='sched-kind'>{plans[s.id]!.kind}</span>
                             )}
