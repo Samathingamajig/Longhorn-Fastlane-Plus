@@ -209,6 +209,9 @@ importers:
       conventional-changelog:
         specifier: ^7.2.0
         version: 7.2.0(conventional-commits-filter@5.0.0)
+      fake-indexeddb:
+        specifier: ^6.2.6
+        version: 6.2.6
       fast-deep-equal:
         specifier: ^3.1.3
         version: 3.1.3
@@ -3666,6 +3669,10 @@ packages:
 
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
+
+  fake-indexeddb@6.2.6:
+    resolution: {integrity: sha512-ihhmr0KoET51jT8R4YhbUYuLLvr1qqO6INISygtN16i8loR8kAxtAUr4+EKHTSMjL+lggaAn4OC7DRqzrNgnuQ==}
+    engines: {node: '>=18'}
 
   fancy-log@2.0.0:
     resolution: {integrity: sha512-9CzxZbACXMUXW13tS0tI8XsGGmxWzO2DmYrGuBJOJ8k8q2K7hwfJA5qHjuPPe8wtsco33YR9wc+Rlr5wYFvhSA==}
@@ -9822,6 +9829,8 @@ snapshots:
   exsolve@1.0.8: {}
 
   extend@3.0.2: {}
+
+  fake-indexeddb@6.2.6: {}
 
   fancy-log@2.0.0:
     dependencies:
