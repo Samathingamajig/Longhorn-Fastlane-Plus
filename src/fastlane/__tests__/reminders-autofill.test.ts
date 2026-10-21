@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { DEFAULT_AUTOFILL, decideAutofill, fillInput, findUniqueAddInput } from '../core/autofill';
 import { buildIcs, foldLine } from '../core/ics';
-import { defaultReminderConfig, planReminders, ReminderError, windowToEpoch } from '../core/reminders';
+import {
+    defaultReminderConfig,
+    normalizeReminderConfig,
+    planReminders,
+    ReminderError,
+    windowToEpoch,
+} from '../core/reminders';
 import { groupByDay } from '../core/wallpaper';
 
 describe('reminders', () => {
@@ -50,6 +56,15 @@ describe('reminders', () => {
             'fastlane-reminder:registration:10',
         ]);
         expect(planReminders({ ...config, enabled: false })).toEqual([]);
+    });
+
+    it('schedules from a partially written config (fresh profile race)', () => {
+        const partial = { enabled: true, window: { date: '2026-11-09', time: '08:00', timeZone: 'America/Chicago' } };
+        const config = normalizeReminderConfig(partial as never);
+        expect(config.offsets).toEqual([1440, 60, 10]);
+        const opens = Date.UTC(2026, 10, 9, 14, 0);
+        expect(planReminders(config, opens - 3 * 24 * 60 * 60_000).length).toBeGreaterThanOrEqual(4);
+        expect(normalizeReminderConfig(undefined)).toEqual(defaultReminderConfig());
     });
 
     it('exports a valid .ics with alarms', () => {

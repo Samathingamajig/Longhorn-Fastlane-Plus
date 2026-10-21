@@ -254,8 +254,13 @@ test.describe('optional outcome suggestions (UT-shaped add/drop form)', () => {
         extensionId,
     }) => {
         const page = await context.newPage();
+        // enable the option the way a student does (Registration prep → checkbox), before visiting the page
+        await page.goto(`chrome-extension://${extensionId}/fastlane.html#register`);
+        const toggle = page.getByRole('checkbox', { name: /Suggest outcomes from UT/ });
+        await toggle.check();
+        await page.reload();
+        await expect(page.getByRole('checkbox', { name: /Suggest outcomes from UT/ })).toBeChecked();
         await page.goto(`chrome-extension://${extensionId}/demo.html`);
-        await page.evaluate(async () => chrome.storage.sync.set({ 'FastlaneSettings:passiveDetection': true }));
         const panel = page.locator('#fastlane-registration-assistant');
         await expect(panel.locator('.code')).toHaveText('65555');
         await panel.getByRole('button', { name: 'Copy 65555' }).click();
@@ -332,6 +337,7 @@ test.describe('degree audit, recommendations, reminders, map, wallpaper', () => 
     test('reminders create chrome.alarms and can be cleared', async ({ context, extensionId, sw }) => {
         const page = await context.newPage();
         await page.goto(`chrome-extension://${extensionId}/fastlane.html#register`);
+        await expect(page.getByRole('heading', { name: 'Registration reminders' })).toBeVisible(); // stores initialized
         const future = new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString().slice(0, 10);
         await page.evaluate(async date => {
             const key = 'FastlaneReminders:reminders';

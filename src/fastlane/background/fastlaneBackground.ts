@@ -7,7 +7,7 @@
  * No network request here ever goes to a developer-controlled server with student data.
  */
 import type { PlannedReminder, ReminderConfig } from '../core/reminders';
-import { ALARM_PREFIX, planReminders } from '../core/reminders';
+import { ALARM_PREFIX, normalizeReminderConfig, planReminders } from '../core/reminders';
 import type { SectionRecord } from '../core/sections';
 import { semesterKey } from '../core/sections';
 import bundled from '../data/bundled-datasets.json';
@@ -45,7 +45,9 @@ async function getSections(semester: string | null | undefined): Promise<Section
 }
 
 export async function syncReminderAlarms(config?: ReminderConfig): Promise<PlannedReminder[]> {
-    const reminders = config ?? ((await FastlaneReminderStore.get('reminders')) as unknown as ReminderConfig);
+    const reminders = normalizeReminderConfig(
+        config ?? ((await FastlaneReminderStore.get('reminders')) as unknown as ReminderConfig)
+    );
     const existing = await chrome.alarms.getAll();
     await Promise.all(existing.filter(a => a.name.startsWith(ALARM_PREFIX)).map(a => chrome.alarms.clear(a.name)));
     let planned: PlannedReminder[] = [];
@@ -76,7 +78,9 @@ async function onAlarm(alarm: chrome.alarms.Alarm) {
         return;
     }
     if (!alarm.name.startsWith(ALARM_PREFIX)) return;
-    const reminders = (await FastlaneReminderStore.get('reminders')) as unknown as ReminderConfig;
+    const reminders = normalizeReminderConfig(
+        (await FastlaneReminderStore.get('reminders')) as unknown as ReminderConfig
+    );
     // recompute so edits made after scheduling are respected
     const match = planReminders(reminders, (alarm.scheduledTime ?? Date.now()) - 60_000).find(r => r.id === alarm.name);
     if (match) notify(`${alarm.name}:${Date.now()}`, match.title, match.message);

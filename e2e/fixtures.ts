@@ -21,6 +21,7 @@ export const test = base.extend<{ context: BrowserContext; extensionId: string; 
                 : { channel: 'chromium' }),
             args: [`--disable-extensions-except=${EXTENSION}`, `--load-extension=${EXTENSION}`],
             viewport: { width: 1440, height: 1000 },
+            permissions: ['clipboard-read', 'clipboard-write'],
         });
         await use(context);
         await context.close();

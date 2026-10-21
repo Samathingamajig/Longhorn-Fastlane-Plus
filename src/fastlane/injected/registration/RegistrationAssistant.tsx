@@ -111,8 +111,8 @@ export default function RegistrationAssistant({ host }: { host: HTMLElement }) {
                 manual,
             });
             if (decision.action === 'fill' && field && current) {
-                fillInput(field, decision.code);
                 baseline.current = new Set(visibleMessages(host).map(t => t.toLowerCase()));
+                fillInput(field, decision.code);
                 await save(recordAutofill(queue, current.id), decision.code);
                 setNotice({
                     text: `Filled ${decision.code}. Review it, then press UT’s submit button yourself.`,
@@ -155,10 +155,13 @@ export default function RegistrationAssistant({ host }: { host: HTMLElement }) {
             setSuggestion(s);
         };
         scan();
+        // throttle (not debounce): a page that keeps changing must not postpone the scan forever
         const observer = new MutationObserver(records => {
-            if (records.every(r => host.contains(r.target))) return;
-            clearTimeout(timer);
-            timer = setTimeout(scan, 200);
+            if (records.every(r => host.contains(r.target)) || timer !== undefined) return;
+            timer = setTimeout(() => {
+                timer = undefined;
+                scan();
+            }, 200);
         });
         observer.observe(document.body, { subtree: true, childList: true, characterData: true });
         return () => {
@@ -195,13 +198,17 @@ export default function RegistrationAssistant({ host }: { host: HTMLElement }) {
     // ---------- actions ----------
     const onCopy = useCallback(async () => {
         if (!current || !code) return;
-        if (!(await copyText(code))) {
-            setNotice({ text: 'Clipboard blocked. Select the number above and copy it manually.', tone: 'warn' });
-            return;
-        }
+        // snapshot existing messages at click time, before any await, so a result that appears while the
+        // clipboard write is in flight is not mistaken for an old message
         baseline.current = new Set(visibleMessages(host).map(t => t.toLowerCase()));
+        const copied = await copyText(code);
+        // record the attempt either way: if the clipboard is blocked the student copies the number by hand
         await save(recordCopy(queue, current.id));
-        setNotice({ text: `Copied ${code}. Paste it at UT and submit it yourself.`, tone: 'info' });
+        setNotice(
+            copied
+                ? { text: `Copied ${code}. Paste it at UT and submit it yourself.`, tone: 'info' }
+                : { text: 'Clipboard blocked. Select the number above and copy it manually.', tone: 'warn' }
+        );
     }, [code, current, host, queue, save]);
 
     const mark = async (outcome: Outcome, source: 'manual' | 'detected' = 'manual') => {
