@@ -22,7 +22,6 @@ import { memo, useEffect, useRef, useState } from 'react';
 import OutwardArrowIcon from '~icons/material-symbols/arrow-outward';
 import SidebarIcon from '~icons/ph/sidebar';
 
-import { Button } from '../common/Button';
 import { LargeLogo } from '../common/LogoIcon';
 import Text from '../common/Text/Text';
 import CalendarFooter from './CalendarFooter';
@@ -59,14 +58,32 @@ const CalendarSidebar = memo(function CalendarSidebar() {
         >
             <div className='flex items-center justify-between px-spacing-7 mb-spacing-2'>
                 <LargeLogo />
-                <Button
-                    variant='minimal'
-                    size='small'
-                    color='theme-black'
+                <button
+                    type='button'
                     onClick={toggleSidebar}
+                    aria-label='Hide schedule sidebar'
+                    title='Hide schedule sidebar'
                     className='screenshot:hidden'
-                    icon={SidebarIcon}
-                />
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        flexShrink: 0,
+                        minHeight: 48,
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        border: '1px solid #e5ded8',
+                        background: '#fff',
+                        color: '#7f3800',
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                    }}
+                >
+                    <SidebarIcon aria-hidden='true' className='h-5 w-5' />
+                    Hide sidebar
+                </button>
             </div>
 
             <div
@@ -250,6 +267,42 @@ export default function Calendar(): ReactNode {
                     </div>
                 )}
 
+                {/* Fixed at the calendar root, outside both scroll containers and far from the schedule-name field. */}
+                {!showSidebar && (
+                    <button
+                        type='button'
+                        data-testid='calendar-sidebar-reopen'
+                        aria-label='Show schedule sidebar'
+                        title='Show your saved schedules'
+                        onClick={toggleSidebar}
+                        className='screenshot:hidden'
+                        style={{
+                            position: 'fixed',
+                            left: 16,
+                            bottom: 20,
+                            zIndex: 2147483000,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 10,
+                            minWidth: 200,
+                            minHeight: 60,
+                            padding: '14px 20px',
+                            border: '2px solid #fff',
+                            borderRadius: 14,
+                            background: '#BF5700',
+                            color: '#fff',
+                            fontSize: 17,
+                            fontWeight: 750,
+                            cursor: 'pointer',
+                            boxShadow: '0 6px 24px rgba(0, 0, 0, .32)',
+                        }}
+                    >
+                        <SidebarIcon aria-hidden='true' className='h-6 w-6' />
+                        Show sidebar
+                    </button>
+                )}
+                
                 {/** biome-ignore lint/a11y/noStaticElementInteractions: TODO: */}
                 <div
                     className='screenshot:calendar-target h-screen flex overflow-auto'
@@ -260,35 +313,6 @@ export default function Calendar(): ReactNode {
                 >
                     <CalendarSidebar />
 
-                    {/* Accessible even when the schedule-name editor obscures the header button. */}
-                    <button
-                        type='button'
-                        onClick={toggleSidebar}
-                        aria-label={showSidebar ? 'Hide schedule sidebar' : 'Show schedule sidebar'}
-                        title={showSidebar ? 'Hide schedule sidebar' : 'Show schedule sidebar'}
-                        className='fixed bottom-5 left-5 z-50 screenshot:hidden'
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 9,
-                            minWidth: 150,
-                            minHeight: 48,
-                            justifyContent: 'center',
-                            padding: '10px 16px',
-                            border: '2px solid white',
-                            borderRadius: 12,
-                            background: '#BF5700',
-                            color: '#fff',
-                            fontSize: 14,
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            boxShadow: '0 5px 20px rgba(0, 0, 0, .22)',
-                        }}
-                    >
-                        <SidebarIcon aria-hidden='true' className='h-5 w-5' />
-                        {showSidebar ? 'Hide sidebar' : 'Show sidebar'}
-                    </button>
-
                     <div
                         id='calendar-content'
                         style={
@@ -298,7 +322,7 @@ export default function Calendar(): ReactNode {
                         }
                         className='z-1 h-full flex flex-grow flex-col overflow-x-scroll [&>*]:px-spacing-5'
                     >
-                        <CalendarHeader sidebarOpen={showSidebar} onSidebarToggle={toggleSidebar} />
+                        <CalendarHeader />
                         <div
                             className={clsx('min-h-2xl min-w-5xl flex-grow gap-0 pl-spacing-3 screenshot:min-h-xl', {
                                 'screenshot:flex-grow-0': bottomBar !== null, // html-to-image seems to have a bug with flex-grow
