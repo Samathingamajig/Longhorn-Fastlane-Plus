@@ -74,6 +74,25 @@ test.describe('fresh profile', () => {
     });
 });
 
+test.describe('calendar sidebar usability', () => {
+    test('a large fixed button reopens the sidebar when it is collapsed', async ({ context, extensionId }) => {
+        const page = await context.newPage();
+        await page.goto(`chrome-extension://${extensionId}/calendar.html`);
+        const hide = page.getByRole('button', { name: 'Hide schedule sidebar' });
+        await expect(hide).toBeVisible();
+        await hide.click();
+        const reopen = page.getByTestId('calendar-sidebar-reopen');
+        await expect(reopen).toBeVisible();
+        const dimensions = await reopen.boundingBox();
+        expect(dimensions).not.toBeNull();
+        expect(dimensions?.width).toBeGreaterThanOrEqual(190);
+        expect(dimensions?.height).toBeGreaterThanOrEqual(56);
+        await reopen.click();
+        await expect(hide).toBeVisible();
+        await expect(reopen).toHaveCount(0);
+    });
+});
+
 test.describe('course listing integration (demo fixtures, real code)', () => {
     test('inline grade percentages, threshold changes, async and conflict indicators', async ({
         context,
