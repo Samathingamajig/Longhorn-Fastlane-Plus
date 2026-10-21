@@ -50,7 +50,7 @@ const CalendarSidebar = memo(function CalendarSidebar() {
             className={clsx(
                 'py-spacing-5 relative h-full min-h-screen w-full flex flex-none flex-col justify-between overflow-clip whitespace-nowrap border-r border-ut-offwhite/50 shadow-[2px_0_10px,rgba(214_210_196_/_.1)] motion-safe:duration-300 motion-safe:ease-out-expo motion-safe:transition-[max-width] screenshot:hidden',
                 {
-                    'max-w-[20.3125rem] ': showSidebar,
+                    'max-w-[23rem] ': showSidebar,
                     'max-w-0 pointer-events-none': !showSidebar,
                 }
             )}
@@ -259,6 +259,35 @@ export default function Calendar(): ReactNode {
                     onDrop={handleDrop}
                 >
                     <CalendarSidebar />
+
+                    {/* Accessible even when the schedule-name editor obscures the header button. */}
+                    <button
+                        type='button'
+                        onClick={toggleSidebar}
+                        aria-label={showSidebar ? 'Hide schedule sidebar' : 'Show schedule sidebar'}
+                        title={showSidebar ? 'Hide schedule sidebar' : 'Show schedule sidebar'}
+                        className='fixed bottom-5 left-5 z-50 screenshot:hidden'
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 9,
+                            minWidth: 150,
+                            minHeight: 48,
+                            justifyContent: 'center',
+                            padding: '10px 16px',
+                            border: '2px solid white',
+                            borderRadius: 12,
+                            background: '#BF5700',
+                            color: '#fff',
+                            fontSize: 14,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            boxShadow: '0 5px 20px rgba(0, 0, 0, .22)',
+                        }}
+                    >
+                        <SidebarIcon aria-hidden='true' className='h-5 w-5' />
+                        {showSidebar ? 'Hide sidebar' : 'Show sidebar'}
+                    </button>
 
                     <div
                         id='calendar-content'
