@@ -19,8 +19,8 @@ import {
 } from '../storage/stores';
 import AuditTab from './AuditTab';
 import { useHashRoute, useOnline } from './hooks';
-import PlanTab from './PlanTab';
 import { FinderTab, HomeTab } from './PlanningTools';
+import PlanTab from './PlanTab';
 import RecommendTab from './RecommendTab';
 import RegisterTab from './RegisterTab';
 import SettingsTab from './SettingsTab';
@@ -32,11 +32,15 @@ const TABS = [
     ['audit', 'Degree progress', ListChecksIcon],
 ] as const;
 
-function FindClasses({ initialRequirement, forceRecommended = false }: { initialRequirement?: string | null; forceRecommended?: boolean }) {
+function FindClasses({
+    initialRequirement,
+    forceRecommended = false,
+}: {
+    initialRequirement?: string | null;
+    forceRecommended?: boolean;
+}) {
     const audit = FastlaneAuditStore.useStore(s => s.audit);
-    const [mode, setMode] = useState<'recommended' | 'all'>(
-        audit || forceRecommended ? 'recommended' : 'all'
-    );
+    const [mode, setMode] = useState<'recommended' | 'all'>(audit || forceRecommended ? 'recommended' : 'all');
     return (
         <div className='stack'>
             <div className='simple-heading'>
@@ -46,13 +50,19 @@ function FindClasses({ initialRequirement, forceRecommended = false }: { initial
                     <p>Find sections that fit your degree, week and grade preferences.</p>
                 </div>
             </div>
-            <div className='mode-toggle' role='group' aria-label='Class finder view'>
-                <button type='button' aria-pressed={mode === 'recommended'}
-                    onClick={() => setMode('recommended')}>For my degree</button>
-                <button type='button' aria-pressed={mode === 'all'}
-                    onClick={() => setMode('all')}>Browse all classes</button>
-            </div>
-            {mode === 'recommended' ? <RecommendTab initialRequirement={initialRequirement} embedded /> : <FinderTab embedded />}
+            <fieldset className='mode-toggle' aria-label='Class finder view'>
+                <button type='button' aria-pressed={mode === 'recommended'} onClick={() => setMode('recommended')}>
+                    For my degree
+                </button>
+                <button type='button' aria-pressed={mode === 'all'} onClick={() => setMode('all')}>
+                    Browse all classes
+                </button>
+            </fieldset>
+            {mode === 'recommended' ? (
+                <RecommendTab initialRequirement={initialRequirement} embedded />
+            ) : (
+                <FinderTab embedded />
+            )}
         </div>
     );
 }
@@ -77,7 +87,19 @@ function Workspace() {
         FastlaneReminderStore,
     ]);
     const [tab, params, go] = useHashRoute();
-    const current = (['home', 'finder', 'plan', 'audit', 'register', 'settings'].includes(tab) ? tab : ({ recommend: 'finder', generate: 'finder', compare: 'plan', roadmap: 'audit', history: 'plan', map: 'home', wallpaper: 'home' } as Record<string, string>)[tab] ?? 'home');
+    const current = ['home', 'finder', 'plan', 'audit', 'register', 'settings'].includes(tab)
+        ? tab
+        : ((
+              {
+                  recommend: 'finder',
+                  generate: 'finder',
+                  compare: 'plan',
+                  roadmap: 'audit',
+                  history: 'plan',
+                  map: 'home',
+                  wallpaper: 'home',
+              } as Record<string, string>
+          )[tab] ?? 'home');
     const theme = FastlaneSettingsStore.useStore(s => s.themePreference);
     const online = useOnline();
     const schedules = useAllSchedules();
@@ -143,10 +165,20 @@ function Workspace() {
                     <button type='button' className='utility-link' onClick={() => go('register')}>
                         <LightningIcon aria-hidden='true' /> Registration prep
                     </button>
-                    <a className='utility-link' href='https://utdirect.utexas.edu/apps/registrar/course_schedule/' target='_blank' rel='noopener noreferrer'>
+                    <a
+                        className='utility-link'
+                        href='https://utdirect.utexas.edu/apps/registrar/course_schedule/'
+                        target='_blank'
+                        rel='noopener noreferrer'
+                    >
                         UT course schedule ↗
                     </a>
-                    <a className='utility-link' href='https://utdirect.utexas.edu/apps/degree/audits/' target='_blank' rel='noopener noreferrer'>
+                    <a
+                        className='utility-link'
+                        href='https://utdirect.utexas.edu/apps/degree/audits/'
+                        target='_blank'
+                        rel='noopener noreferrer'
+                    >
                         Open my IDA ↗
                     </a>
                 </div>
@@ -169,7 +201,9 @@ function Workspace() {
             </aside>
             <main className='main'>
                 {current === 'home' && <HomeTab go={go} />}
-                {current === 'finder' && <FindClasses initialRequirement={params.get('req')} forceRecommended={tab === 'recommend'} />}
+                {current === 'finder' && (
+                    <FindClasses initialRequirement={params.get('req')} forceRecommended={tab === 'recommend'} />
+                )}
                 {current === 'plan' && <PlanTab onNavigate={go} />}
                 {current === 'audit' && <AuditTab onNavigate={go} />}
                 {current === 'register' && <RegisterTab />}

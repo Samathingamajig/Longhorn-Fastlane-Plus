@@ -167,7 +167,9 @@ export default function AuditTab({
                     ))}
                     <div className='metrics simple-audit-metrics'>
                         <div className='metric'>
-                            <b>{reqs.filter(r => r.status === 'completed').length} / {reqs.length}</b>
+                            <b>
+                                {reqs.filter(r => r.status === 'completed').length} / {reqs.length}
+                            </b>
                             <span>requirements complete</span>
                         </div>
                         <div className='metric'>
@@ -181,7 +183,8 @@ export default function AuditTab({
                     </div>
                     {review.length > 0 && (
                         <div className='notice warn small'>
-                            {review.length} imported requirements need confirmation. Check “Needs review” before relying on recommendations.
+                            {review.length} imported requirements need confirmation. Check “Needs review” before relying
+                            on recommendations.
                         </div>
                     )}
                     {audit.transfer.pending.length > 0 && (

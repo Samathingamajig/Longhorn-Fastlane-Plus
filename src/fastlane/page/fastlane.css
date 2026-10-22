@@ -1010,12 +1010,12 @@ table.list td {
     --r-btn: 12px;
     --ease: 160ms ease-out;
 }
-html, body {
+html,
+body {
     min-height: 100%;
     background:
         radial-gradient(ellipse at 82% 5%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 38%),
-        radial-gradient(ellipse at 16% 88%, color-mix(in srgb, #7787b7 10%, transparent), transparent 50%),
-        var(--bg);
+        radial-gradient(ellipse at 16% 88%, color-mix(in srgb, #7787b7 10%, transparent), transparent 50%), var(--bg);
 }
 .shell {
     grid-template-columns: 254px minmax(0, 1fr);
@@ -1126,11 +1126,15 @@ html, body {
     max-width: 1190px;
     padding: 41px clamp(20px, 4.2vw, 58px) 48px;
 }
-.card, .metric, .slot {
+.card,
+.metric,
+.slot {
     background: color-mix(in srgb, var(--surface) 84%, transparent);
     border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
     border-radius: 20px;
-    box-shadow: 0 12px 38px rgba(28, 26, 25, 0.035), inset 0 1px 0 color-mix(in srgb, var(--surface) 90%, transparent);
+    box-shadow:
+        0 12px 38px rgba(28, 26, 25, 0.035),
+        inset 0 1px 0 color-mix(in srgb, var(--surface) 90%, transparent);
     backdrop-filter: blur(18px) saturate(125%);
     -webkit-backdrop-filter: blur(18px) saturate(125%);
 }
@@ -1229,7 +1233,10 @@ html, body {
     padding: 22px;
     cursor: pointer;
     color: var(--text);
-    transition: transform var(--ease), border-color var(--ease), box-shadow var(--ease);
+    transition:
+        transform var(--ease),
+        border-color var(--ease),
+        box-shadow var(--ease);
 }
 .simple-action:hover {
     transform: translateY(-2px);
@@ -1385,17 +1392,48 @@ html, body {
     line-height: 1.55;
 }
 @media (max-width: 1000px) {
-    .simple-cards { grid-template-columns: 1fr; }
-    .simple-action { min-height: 160px; }
+    .simple-cards {
+        grid-template-columns: 1fr;
+    }
+    .simple-action {
+        min-height: 160px;
+    }
 }
 @media (max-width: 900px) {
-    .shell { grid-template-columns: 1fr; }
-    .side { height: auto; position: relative; }
-    .nav { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
-    .main { padding: 25px 17px; }
+    .shell {
+        grid-template-columns: 1fr;
+    }
+    .side {
+        height: auto;
+        position: relative;
+    }
+    .nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .main {
+        padding: 25px 17px;
+    }
 }
 @media (max-width: 570px) {
-    .nav { grid-template-columns: 1fr; }
-    .progress-summary { align-items: flex-start; flex-direction: column; gap: 12px; }
-    .simple-filter-grid { grid-template-columns: 1fr; }
+    .nav {
+        grid-template-columns: 1fr;
+    }
+    .progress-summary {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .simple-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* grouped toggles are <fieldset>s for accessibility; keep their original look */
+fieldset.mode-toggle,
+fieldset.day-chips {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
 }

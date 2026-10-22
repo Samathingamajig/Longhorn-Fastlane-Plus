@@ -454,7 +454,10 @@ test.describe('degree audit, recommendations, reminders and simple navigation', 
         await page.screenshot({ path: `${SHOTS}/6-registration-prep-reminders.png`, fullPage: false });
     });
 
-    test('planner shows four primary pages without map, wallpaper or history clutter', async ({ context, extensionId }) => {
+    test('planner shows four primary pages without map, wallpaper or history clutter', async ({
+        context,
+        extensionId,
+    }) => {
         const page = await context.newPage();
         await openDemo(page, extensionId);
         await page.goto(`chrome-extension://${extensionId}/fastlane.html#home`);

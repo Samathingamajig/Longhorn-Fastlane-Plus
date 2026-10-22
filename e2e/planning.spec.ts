@@ -60,7 +60,9 @@ test('minimal planner navigation keeps saved schedules accessible', async ({ con
 
     const schedules = await sw.evaluate(async () => (await chrome.storage.local.get('schedules')).schedules);
     await expect(page.getByRole('combobox', { name: 'CURRENT SCHEDULE' })).toBeVisible();
-    await expect(page.getByRole('combobox', { name: 'CURRENT SCHEDULE' }).locator('option')).toHaveCount(schedules.length);
+    await expect(page.getByRole('combobox', { name: 'CURRENT SCHEDULE' }).locator('option')).toHaveCount(
+        schedules.length
+    );
     await nav.getByRole('button', { name: 'My schedule' }).click();
     await expect(page.getByRole('link', { name: 'Open full calendar' })).toBeVisible();
     // Nothing in the simplified planner should mutate existing schedule data just by navigating.
@@ -68,7 +70,10 @@ test('minimal planner navigation keeps saved schedules accessible', async ({ con
     expect(after).toEqual(schedules);
 });
 
-test('IDA-based home and simple course filters work without hidden advanced screens', async ({ context, extensionId }) => {
+test('IDA-based home and simple course filters work without hidden advanced screens', async ({
+    context,
+    extensionId,
+}) => {
     const page = await demo(context, extensionId);
     const errors: string[] = [];
     page.on('pageerror', e => errors.push(e.message));

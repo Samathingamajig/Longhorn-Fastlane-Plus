@@ -54,12 +54,21 @@ export function HomeTab({ go }: { go: (tab: string) => void }) {
                 <section className='card glass-hero'>
                     <span className='eyebrow'>START HERE</span>
                     <h2>Connect your degree audit</h2>
-                    <p className='muted'>Import your UT Interactive Degree Audit (IDA) so Fastlane can recommend classes for requirements you still need.</p>
+                    <p className='muted'>
+                        Import your UT Interactive Degree Audit (IDA) so Fastlane can recommend classes for requirements
+                        you still need.
+                    </p>
                     <div className='row'>
-                        <button type='button' className='btn primary' onClick={() => go('audit')}>Import my IDA</button>
-                        <button type='button' className='btn' onClick={() => go('finder')}>Browse classes instead</button>
+                        <button type='button' className='btn primary' onClick={() => go('audit')}>
+                            Import my IDA
+                        </button>
+                        <button type='button' className='btn' onClick={() => go('finder')}>
+                            Browse classes instead
+                        </button>
                     </div>
-                    <p className='small muted'>IDA information is stored locally. You'll review anything the importer isn't certain about.</p>
+                    <p className='small muted'>
+                        IDA information is stored locally. You'll review anything the importer isn't certain about.
+                    </p>
                 </section>
             ) : (
                 <section className='card glass-hero'>
@@ -68,34 +77,56 @@ export function HomeTab({ go }: { go: (tab: string) => void }) {
                             <span className='eyebrow'>FROM YOUR IMPORTED IDA</span>
                             <h2>{audit.program || 'Degree progress'}</h2>
                         </div>
-                        <button type='button' className='btn sm' onClick={() => go('audit')}>Review audit →</button>
+                        <button type='button' className='btn sm' onClick={() => go('audit')}>
+                            Review audit →
+                        </button>
                     </div>
                     <div className='progress-summary'>
-                        <div className='progress-big'>{completed}<span> / {requirements.length}</span></div>
+                        <div className='progress-big'>
+                            {completed}
+                            <span> / {requirements.length}</span>
+                        </div>
                         <div className='progress-info'>
                             <b>Tracked requirements completed</b>
-                            <div className='progress-track' role='progressbar' aria-label='Completed tracked audit requirements'
-                                aria-valuenow={completed} aria-valuemin={0} aria-valuemax={requirements.length || 1}>
+                            <div
+                                className='progress-track'
+                                role='progressbar'
+                                aria-label='Completed tracked audit requirements'
+                                aria-valuenow={completed}
+                                aria-valuemin={0}
+                                aria-valuemax={requirements.length || 1}
+                            >
                                 <span style={{ width: `${trackedPercent}%` }} />
                             </div>
-                            <span className='small muted'>{remaining} unfinished · {trackedPercent}% of parsed requirements</span>
+                            <span className='small muted'>
+                                {remaining} unfinished · {trackedPercent}% of parsed requirements
+                            </span>
                         </div>
                     </div>
                     <div className='summary-pills'>
                         {hours?.required && hours?.applied !== undefined && (
-                            <span>{hours.applied} of {hours.required} degree hours applied</span>
+                            <span>
+                                {hours.applied} of {hours.required} degree hours applied
+                            </span>
                         )}
                         {hours?.remaining !== undefined && <span>{hours.remaining} hours remaining</span>}
                         <span>{audit.transfer.pending.length} pending transfer/exam credits</span>
                     </div>
-                    <p className='small muted'>Requirements are parsed from your IDA, not an official graduation percentage. Confirm your degree progress with UT.</p>
+                    <p className='small muted'>
+                        Requirements are parsed from your IDA, not an official graduation percentage. Confirm your
+                        degree progress with UT.
+                    </p>
                 </section>
             )}
             <div className='simple-cards'>
                 <button type='button' className='simple-action card' onClick={() => go(audit ? 'recommend' : 'audit')}>
                     <span className='action-icon'>01</span>
                     <h3>{audit ? 'Find recommended classes' : 'Check degree progress'}</h3>
-                    <p>{audit ? 'Match courses to unfinished IDA requirements.' : 'Import your IDA to see what is left.'}</p>
+                    <p>
+                        {audit
+                            ? 'Match courses to unfinished IDA requirements.'
+                            : 'Import your IDA to see what is left.'}
+                    </p>
                     <span className='action-arrow'>Explore →</span>
                 </button>
                 <button type='button' className='simple-action card' onClick={() => go('finder')}>
@@ -107,7 +138,11 @@ export function HomeTab({ go }: { go: (tab: string) => void }) {
                 <button type='button' className='simple-action card' onClick={() => go('plan')}>
                     <span className='action-icon'>03</span>
                     <h3>My schedule</h3>
-                    <p>{active?.courses.length ? `${active.courses.length} classes in ${active.name}.` : 'Build a weekly schedule and keep backup sections.'}</p>
+                    <p>
+                        {active?.courses.length
+                            ? `${active.courses.length} classes in ${active.name}.`
+                            : 'Build a weekly schedule and keep backup sections.'}
+                    </p>
                     <span className='action-arrow'>Open schedule →</span>
                 </button>
             </div>
@@ -138,42 +173,73 @@ function FilterControls({
         <section className='card planner-glass compact-filters' aria-label='Course filters'>
             <div className='filter-top'>
                 <h2>Filters</h2>
-                <button type='button' className='btn sm ghost' onClick={() => set({ ...DEFAULT_FILTERS, semester: f.semester })}>
+                <button
+                    type='button'
+                    className='btn sm ghost'
+                    onClick={() => set({ ...DEFAULT_FILTERS, semester: f.semester })}
+                >
                     Clear filters
                 </button>
             </div>
             <div className='simple-filter-grid'>
                 <label>
                     Semester
-                    <select aria-label='Semester' value={f.semester} onChange={e => update({ semester: e.target.value })}>
+                    <select
+                        aria-label='Semester'
+                        value={f.semester}
+                        onChange={e => update({ semester: e.target.value })}
+                    >
                         <option value=''>Choose semester</option>
-                        {terms.map(t => <option key={t} value={t}>{t}</option>)}
+                        {terms.map(t => (
+                            <option key={t} value={t}>
+                                {t}
+                            </option>
+                        ))}
                     </select>
                 </label>
                 <label>
                     Subject
-                    <select aria-label='Subject' value={f.department ?? ''} onChange={e => update({ department: e.target.value })}>
+                    <select
+                        aria-label='Subject'
+                        value={f.department ?? ''}
+                        onChange={e => update({ department: e.target.value })}
+                    >
                         <option value=''>All subjects</option>
-                        {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                        {departments.map(d => (
+                            <option key={d} value={d}>
+                                {d}
+                            </option>
+                        ))}
                     </select>
                 </label>
                 <label>
                     Course or keyword
-                    <input aria-label='Course or keyword' type='text' value={f.query}
-                        onChange={e => update({ query: e.target.value })} placeholder='UGS 302, Economics…' />
+                    <input
+                        aria-label='Course or keyword'
+                        type='text'
+                        value={f.query}
+                        onChange={e => update({ query: e.target.value })}
+                        placeholder='UGS 302, Economics…'
+                    />
                 </label>
                 <label>
                     Historical grade
-                    <select aria-label='Historical grade metric' value={gradeThreshold}
-                        onChange={e => onGradeThresholdChange(e.target.value as 'A' | 'A-')}>
+                    <select
+                        aria-label='Historical grade metric'
+                        value={gradeThreshold}
+                        onChange={e => onGradeThresholdChange(e.target.value as 'A' | 'A-')}
+                    >
                         <option value='A'>A percentage</option>
                         <option value='A-'>A− or better percentage</option>
                     </select>
                 </label>
                 <label>
                     Minimum {gradeThreshold === 'A' ? 'A' : 'A− or better'} rate
-                    <select aria-label='Minimum historical A minus percentage' value={f.minGrade}
-                        onChange={e => update({ minGrade: Number(e.target.value) })}>
+                    <select
+                        aria-label='Minimum historical A minus percentage'
+                        value={f.minGrade}
+                        onChange={e => update({ minGrade: Number(e.target.value) })}
+                    >
                         <option value={0}>Any grade history</option>
                         <option value={60}>60%+</option>
                         <option value={70}>70%+</option>
@@ -183,7 +249,11 @@ function FilterControls({
                 </label>
                 <label>
                     Class type
-                    <select aria-label='Class type' value={f.modality} onChange={e => update({ modality: e.target.value })}>
+                    <select
+                        aria-label='Class type'
+                        value={f.modality}
+                        onChange={e => update({ modality: e.target.value })}
+                    >
                         <option value=''>Any type</option>
                         <option value='async-online'>Online, asynchronous</option>
                         <option value='live-online'>Online, live</option>
@@ -194,18 +264,36 @@ function FilterControls({
             </div>
             <div className='day-filter'>
                 <span className='small muted'>Days I can take classes</span>
-                <div className='day-chips' role='group' aria-label='Allowed class days'>
+                <fieldset className='day-chips' aria-label='Allowed class days'>
                     {DAY_ORDER.map(d => (
-                        <button type='button' key={d} className='day-chip'
+                        <button
+                            type='button'
+                            key={d}
+                            className='day-chip'
                             aria-pressed={f.days.includes(d)}
-                            onClick={() => update({ days: f.days.includes(d) ? f.days.filter(x => x !== d) : [...f.days, d] })}>
-                            {d === 'TH' ? 'Thu' : d === 'SU' ? 'Sun' : d === 'T' ? 'Tue' : d === 'M' ? 'Mon' : d === 'W' ? 'Wed' : d === 'F' ? 'Fri' : 'Sat'}
+                            onClick={() =>
+                                update({ days: f.days.includes(d) ? f.days.filter(x => x !== d) : [...f.days, d] })
+                            }
+                        >
+                            {d === 'TH'
+                                ? 'Thu'
+                                : d === 'SU'
+                                  ? 'Sun'
+                                  : d === 'T'
+                                    ? 'Tue'
+                                    : d === 'M'
+                                      ? 'Mon'
+                                      : d === 'W'
+                                        ? 'Wed'
+                                        : d === 'F'
+                                          ? 'Fri'
+                                          : 'Sat'}
                         </button>
                     ))}
                     <button type='button' className='btn sm' onClick={() => update({ days: ['M', 'T', 'W', 'TH'] })}>
                         No Fridays
                     </button>
-                </div>
+                </fieldset>
             </div>
             {showFits && (
                 <label className='check simple-fit'>
@@ -216,36 +304,69 @@ function FilterControls({
             <details className='more-filters'>
                 <summary>More filters</summary>
                 <div className='planner-fields'>
-                    <label>Professor
-                        <input type='text' value={f.professor} onChange={e => update({ professor: e.target.value })} placeholder='Professor name' />
-                    </label>
-                    <label>Credit hours
-                        <select value={f.hours} onChange={e => update({ hours: Number(e.target.value) })}>
-                            <option value='0'>Any credit hours</option>
-                            {[1, 2, 3, 4, 5, 6].map(h => <option key={h} value={h}>{h}</option>)}
-                        </select>
-                    </label>
-                    <label>Degree requirement
-                        <select value={f.requirement} onChange={e => update({ requirement: e.target.value })}>
-                            <option value=''>Any requirement</option>
-                            {tags.map(t => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                    </label>
-                    <label>Earliest class start
-                        <input type='time'
-                            value={`${String(Math.floor(f.start / 60)).padStart(2, '0')}:${String(f.start % 60).padStart(2, '0')}`}
-                            onChange={e => { const [h, m] = e.target.value.split(':').map(Number); if (h !== undefined && m !== undefined) update({ start: h * 60 + m }); }}
+                    <label>
+                        Professor
+                        <input
+                            type='text'
+                            value={f.professor}
+                            onChange={e => update({ professor: e.target.value })}
+                            placeholder='Professor name'
                         />
                     </label>
-                    <label>Latest class end
-                        <input type='time'
-                            value={f.end === 1440 ? '23:59' : `${String(Math.floor(f.end / 60)).padStart(2, '0')}:${String(f.end % 60).padStart(2, '0')}`}
-                            onChange={e => { const [h, m] = e.target.value.split(':').map(Number); if (h !== undefined && m !== undefined) update({ end: h * 60 + m }); }}
+                    <label>
+                        Credit hours
+                        <select value={f.hours} onChange={e => update({ hours: Number(e.target.value) })}>
+                            <option value='0'>Any credit hours</option>
+                            {[1, 2, 3, 4, 5, 6].map(h => (
+                                <option key={h} value={h}>
+                                    {h}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        Degree requirement
+                        <select value={f.requirement} onChange={e => update({ requirement: e.target.value })}>
+                            <option value=''>Any requirement</option>
+                            {tags.map(t => (
+                                <option key={t} value={t}>
+                                    {t}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        Earliest class start
+                        <input
+                            type='time'
+                            value={`${String(Math.floor(f.start / 60)).padStart(2, '0')}:${String(f.start % 60).padStart(2, '0')}`}
+                            onChange={e => {
+                                const [h, m] = e.target.value.split(':').map(Number);
+                                if (h !== undefined && m !== undefined) update({ start: h * 60 + m });
+                            }}
+                        />
+                    </label>
+                    <label>
+                        Latest class end
+                        <input
+                            type='time'
+                            value={
+                                f.end === 1440
+                                    ? '23:59'
+                                    : `${String(Math.floor(f.end / 60)).padStart(2, '0')}:${String(f.end % 60).padStart(2, '0')}`
+                            }
+                            onChange={e => {
+                                const [h, m] = e.target.value.split(':').map(Number);
+                                if (h !== undefined && m !== undefined) update({ end: h * 60 + m });
+                            }}
                         />
                     </label>
                 </div>
             </details>
-            <p className='small muted'>Grade percentages are historical {gradeThreshold === 'A' ? 'A rates' : 'A− or better rates'}, not predictions. Filtering by a percentage excludes sections with no grade data.</p>
+            <p className='small muted'>
+                Grade percentages are historical {gradeThreshold === 'A' ? 'A rates' : 'A− or better rates'}, not
+                predictions. Filtering by a percentage excludes sections with no grade data.
+            </p>
         </section>
     );
 }
@@ -326,7 +447,9 @@ export function FinderTab({ generate = false, embedded = false }: { generate?: b
         };
     }, []);
     const terms = [...new Set(catalog.map(s => semesterKey(s.semester)))].filter(t => t !== 'unknown');
-    const departments = [...new Set(catalog.map(s => s.courseCode.replace(/\s+\d.*$/, '').trim()).filter(Boolean))].sort();
+    const departments = [
+        ...new Set(catalog.map(s => s.courseCode.replace(/\s+\d.*$/, '').trim()).filter(Boolean)),
+    ].sort();
     useEffect(() => {
         if (catalog.length && !filters.semester) {
             const lastSeen = [...catalog].sort((a, b) => (b.capturedAt || 0) - (a.capturedAt || 0))[0];
