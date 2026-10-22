@@ -37,63 +37,81 @@ import WeekGrid from './WeekGrid';
 
 export function HomeTab({ go }: { go: (tab: string) => void }) {
     const audit = FastlaneAuditStore.useStore(s => s.audit);
-    const onboarded = PlanningStore.useStore(s => s.onboarded);
     const active = useActiveSchedule();
+    const requirements = audit?.requirements ?? [];
+    const completed = requirements.filter(r => r.status === 'completed').length;
+    const remaining = requirements.filter(r => r.status !== 'completed').length;
+    const trackedPercent = requirements.length ? Math.round((completed / requirements.length) * 100) : 0;
+    const hours = audit?.creditHours;
     return (
-        <>
-            <h1>Make room for what matters.</h1>
-            <p className='muted'>Your classes, degree progress and alternatives, together in this browser.</p>
-            {!onboarded && (
-                <section className='card planner-glass'>
-                    <h2>Welcome to FastLane</h2>
-                    <ol>
-                        <li>
-                            Open your IDA results and click <b>Add IDA</b>. Review uncertain requirements.
-                        </li>
-                        <li>Browse UT’s course schedule to save real sections to the local cache.</li>
-                        <li>Find classes, generate combinations, then compare your favorites.</li>
-                        <li>Verify availability and prerequisites before registering with UT.</li>
-                    </ol>
-                    <button type='button' className='btn' onClick={() => void PlanningStore.set('onboarded', true)}>
-                        Got it
-                    </button>
+        <div className='stack'>
+            <div className='simple-heading'>
+                <span className='eyebrow'>YOUR DEGREE, SIMPLIFIED</span>
+                <h1>Plan your next semester.</h1>
+                <p>See what you need, find a great section, and build your schedule.</p>
+            </div>
+            {!audit ? (
+                <section className='card glass-hero'>
+                    <span className='eyebrow'>START HERE</span>
+                    <h2>Connect your degree audit</h2>
+                    <p className='muted'>Import your UT Interactive Degree Audit (IDA) so Fastlane can recommend classes for requirements you still need.</p>
+                    <div className='row'>
+                        <button type='button' className='btn primary' onClick={() => go('audit')}>Import my IDA</button>
+                        <button type='button' className='btn' onClick={() => go('finder')}>Browse classes instead</button>
+                    </div>
+                    <p className='small muted'>IDA information is stored locally. You'll review anything the importer isn't certain about.</p>
+                </section>
+            ) : (
+                <section className='card glass-hero'>
+                    <div className='row between'>
+                        <div>
+                            <span className='eyebrow'>FROM YOUR IMPORTED IDA</span>
+                            <h2>{audit.program || 'Degree progress'}</h2>
+                        </div>
+                        <button type='button' className='btn sm' onClick={() => go('audit')}>Review audit →</button>
+                    </div>
+                    <div className='progress-summary'>
+                        <div className='progress-big'>{completed}<span> / {requirements.length}</span></div>
+                        <div className='progress-info'>
+                            <b>Tracked requirements completed</b>
+                            <div className='progress-track' role='progressbar' aria-label='Completed tracked audit requirements'
+                                aria-valuenow={completed} aria-valuemin={0} aria-valuemax={requirements.length || 1}>
+                                <span style={{ width: `${trackedPercent}%` }} />
+                            </div>
+                            <span className='small muted'>{remaining} unfinished · {trackedPercent}% of parsed requirements</span>
+                        </div>
+                    </div>
+                    <div className='summary-pills'>
+                        {hours?.required && hours?.applied !== undefined && (
+                            <span>{hours.applied} of {hours.required} degree hours applied</span>
+                        )}
+                        {hours?.remaining !== undefined && <span>{hours.remaining} hours remaining</span>}
+                        <span>{audit.transfer.pending.length} pending transfer/exam credits</span>
+                    </div>
+                    <p className='small muted'>Requirements are parsed from your IDA, not an official graduation percentage. Confirm your degree progress with UT.</p>
                 </section>
             )}
-            <section className='card planner-glass'>
-                <h2>What should I do next?</h2>
-                <div className='planner-actions'>
-                    <button type='button' className='btn' onClick={() => go(audit ? 'recommend' : 'audit')}>
-                        {audit ? 'Find classes for unfinished requirements' : 'Add your degree audit'}
-                    </button>
-                    <button type='button' className='btn' onClick={() => go('finder')}>
-                        Explore cached classes
-                    </button>
-                    <button
-                        type='button'
-                        className='btn'
-                        onClick={() => go(active?.courses.length ? 'compare' : 'generate')}
-                    >
-                        {active?.courses.length ? 'Duplicate and compare your schedule' : 'Build a schedule'}
-                    </button>
-                    <button type='button' className='btn' onClick={() => go('roadmap')}>
-                        Plan future semesters
-                    </button>
-                </div>
-            </section>
-            <section className='card'>
-                <h2>What the numbers mean</h2>
-                <p>
-                    A− or better includes A and A−, divided by all historical letter grades. Non-letter outcomes are
-                    excluded. Comparison averages weight each class equally, and show how many classes have data.
-                    Historical results are not a prediction of your grade.
-                </p>
-                <p>
-                    Audits, roadmap and history stay in local extension storage. Sharing uses a separate schedule-only
-                    file. Your browser profile and anyone with access to it can still access local data. Manage or
-                    delete it in Settings & privacy.
-                </p>
-            </section>
-        </>
+            <div className='simple-cards'>
+                <button type='button' className='simple-action card' onClick={() => go(audit ? 'recommend' : 'audit')}>
+                    <span className='action-icon'>01</span>
+                    <h3>{audit ? 'Find recommended classes' : 'Check degree progress'}</h3>
+                    <p>{audit ? 'Match courses to unfinished IDA requirements.' : 'Import your IDA to see what is left.'}</p>
+                    <span className='action-arrow'>Explore →</span>
+                </button>
+                <button type='button' className='simple-action card' onClick={() => go('finder')}>
+                    <span className='action-icon'>02</span>
+                    <h3>Filter classes</h3>
+                    <p>Search by department, days, professor or historical A grades.</p>
+                    <span className='action-arrow'>Browse →</span>
+                </button>
+                <button type='button' className='simple-action card' onClick={() => go('plan')}>
+                    <span className='action-icon'>03</span>
+                    <h3>My schedule</h3>
+                    <p>{active?.courses.length ? `${active.courses.length} classes in ${active.name}.` : 'Build a weekly schedule and keep backup sections.'}</p>
+                    <span className='action-arrow'>Open schedule →</span>
+                </button>
+            </div>
+        </div>
     );
 }
 function FilterControls({
