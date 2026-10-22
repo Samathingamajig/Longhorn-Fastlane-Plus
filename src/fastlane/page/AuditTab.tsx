@@ -151,7 +151,9 @@ export default function AuditTab({
                 />
                 <b>{busy ? 'Reading audit…' : 'Drop your audit here or click to choose a file'}</b>
                 <div className='small muted'>
-                    While viewing your audit in Chrome, press <b>Command+S</b> (Mac) or <b>Ctrl+S</b> (Windows) and select <i>Webpage, HTML Only</i>. You can also use <i>Print → Save as PDF</i>. An automatic “Import this page” button is planned for the live UT audit screen.
+                    While viewing your audit in Chrome, press <b>Command+S</b> (Mac) or <b>Ctrl+S</b> (Windows) and
+                    select <i>Webpage, HTML Only</i>. You can also use <i>Print → Save as PDF</i>. On a live IDA results
+                    page, click “Add IDA” to import it directly into this browser.
                 </div>
             </label>
             {error && (

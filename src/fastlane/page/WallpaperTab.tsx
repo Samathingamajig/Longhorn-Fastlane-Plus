@@ -86,11 +86,21 @@ export default function WallpaperTab() {
                 <div className='card stack'>
                     <label className='field'>
                         Schedule for wallpaper
-                        <select aria-label='Schedule for wallpaper' value={schedule.id} onChange={e => void switchSchedule(e.target.value)}>
-                            {schedules.map(s => <option key={s.id} value={s.id}>{s.name} ({s.courses.length} classes)</option>)}
+                        <select
+                            aria-label='Schedule for wallpaper'
+                            value={schedule.id}
+                            onChange={e => void switchSchedule(e.target.value)}
+                        >
+                            {schedules.map(s => (
+                                <option key={s.id} value={s.id}>
+                                    {s.name} ({s.courses.length} classes)
+                                </option>
+                            ))}
                         </select>
                     </label>
-                    <a className='btn' href={chrome.runtime.getURL('calendar.html')} target='_blank' rel='noopener'>Open calendar to add or review classes</a>
+                    <a className='btn' href={chrome.runtime.getURL('calendar.html')} target='_blank' rel='noopener'>
+                        Open calendar to add or review classes
+                    </a>
                     <label className='field'>
                         Size
                         <select value={presetId} onChange={e => setPresetId(e.target.value as typeof presetId)}>
@@ -153,7 +163,12 @@ export default function WallpaperTab() {
                         />
                         Color by course
                     </label>
-                    {!classes.length && <div className='notice small'>This schedule has no courses yet. Choose another saved schedule above, or select “Open calendar” to add classes. Only classes in the selected schedule appear in the wallpaper.</div>}
+                    {!classes.length && (
+                        <div className='notice small'>
+                            This schedule has no courses yet. Choose another saved schedule above, or select “Open
+                            calendar” to add classes. Only classes in the selected schedule appear in the wallpaper.
+                        </div>
+                    )}
                     <div className='small muted'>The top of the image is left clear for your phone’s clock.</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'center' }}>

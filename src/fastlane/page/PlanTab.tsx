@@ -402,11 +402,26 @@ export default function PlanTab({
                         >
                             UT’s course catalog
                         </a>
-                        , choose a section, and use the extension’s Add to Schedule button. Courses in other saved schedules are separate; select that schedule in the left sidebar to see its calendar.
+                        , choose a section, and use the extension’s Add to Schedule button. Courses in other saved
+                        schedules are separate; select that schedule in the left sidebar to see its calendar.
                     </p>
                     <div className='row' style={{ marginTop: 12 }}>
-                        <a className='btn primary' href={chrome.runtime.getURL('calendar.html')} target='_blank' rel='noopener'>Open calendar &amp; schedules</a>
-                        <a className='btn' href='https://utdirect.utexas.edu/apps/registrar/course_schedule/' target='_blank' rel='noopener'>Find classes</a>
+                        <a
+                            className='btn primary'
+                            href={chrome.runtime.getURL('calendar.html')}
+                            target='_blank'
+                            rel='noopener'
+                        >
+                            Open calendar &amp; schedules
+                        </a>
+                        <a
+                            className='btn'
+                            href='https://utdirect.utexas.edu/apps/registrar/course_schedule/'
+                            target='_blank'
+                            rel='noopener'
+                        >
+                            Find classes
+                        </a>
                     </div>
                 </div>
             ) : (

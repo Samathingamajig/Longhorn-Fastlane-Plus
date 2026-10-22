@@ -3,6 +3,7 @@ import importSchedule from '@pages/background/lib/importSchedule';
 import type { CalendarTabMessages } from '@shared/messages/CalendarMessages';
 import { OptionsStore } from '@shared/storage/OptionsStore';
 import type { Course } from '@shared/types/Course';
+import CalendarBackups from '@views/components/calendar/CalendarBackups';
 import CalendarBottomBar from '@views/components/calendar/CalendarBottomBar';
 import CalendarGrid from '@views/components/calendar/CalendarGrid';
 import CalendarHeader from '@views/components/calendar/CalendarHeader/CalendarHeader';
@@ -28,7 +29,6 @@ import CalendarFooter from './CalendarFooter';
 
 const CalendarSidebar = memo(function CalendarSidebar() {
     const showSidebar = OptionsStore.useStore(store => store.showCalendarSidebar);
-    const toggleSidebar = () => void OptionsStore.set('showCalendarSidebar', !showSidebar);
     const showReportIssueDialog = useReportIssueDialog();
     const sidebarRef = useRef<HTMLDivElement>(null);
 
@@ -56,34 +56,8 @@ const CalendarSidebar = memo(function CalendarSidebar() {
             tabIndex={-1}
             aria-hidden={!showSidebar}
         >
-            <div className='flex items-center justify-between px-spacing-7 mb-spacing-2'>
+            <div className='flex items-center justify-between px-spacing-7 mb-spacing-2' style={{ paddingTop: 80 }}>
                 <LargeLogo />
-                <button
-                    type='button'
-                    onClick={toggleSidebar}
-                    aria-label='Hide schedule sidebar'
-                    title='Hide schedule sidebar'
-                    className='screenshot:hidden'
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        flexShrink: 0,
-                        minHeight: 48,
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        border: '1px solid #e5ded8',
-                        background: '#fff',
-                        color: '#7f3800',
-                        fontSize: 14,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                    }}
-                >
-                    <SidebarIcon aria-hidden='true' className='h-5 w-5' />
-                    Hide sidebar
-                </button>
             </div>
 
             <div
@@ -267,27 +241,27 @@ export default function Calendar(): ReactNode {
                     </div>
                 )}
 
-                {/* Fixed at the calendar root, outside both scroll containers and far from the schedule-name field. */}
-                {!showSidebar && (
+                {/* Shared fixed control stays outside scrolling containers; the header reserves its own space. */}
+                {
                     <button
                         type='button'
-                        data-testid='calendar-sidebar-reopen'
-                        aria-label='Show schedule sidebar'
-                        title='Show your saved schedules'
+                        data-testid='calendar-sidebar-toggle'
+                        aria-label={showSidebar ? 'Hide schedule sidebar' : 'Show schedule sidebar'}
+                        title={showSidebar ? 'Hide your saved schedules' : 'Show your saved schedules'}
                         onClick={toggleSidebar}
                         className='screenshot:hidden'
                         style={{
                             position: 'fixed',
                             left: 16,
-                            bottom: 20,
+                            top: 16,
                             zIndex: 2147483000,
                             display: 'inline-flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: 10,
-                            minWidth: 200,
-                            minHeight: 60,
-                            padding: '14px 20px',
+                            minWidth: 40,
+                            minHeight: 40,
+                            padding: 8,
                             border: '2px solid #fff',
                             borderRadius: 14,
                             background: '#BF5700',
@@ -299,10 +273,9 @@ export default function Calendar(): ReactNode {
                         }}
                     >
                         <SidebarIcon aria-hidden='true' className='h-6 w-6' />
-                        Show sidebar
                     </button>
-                )}
-                
+                }
+
                 {/** biome-ignore lint/a11y/noStaticElementInteractions: TODO: */}
                 <div
                     className='screenshot:calendar-target h-screen flex overflow-auto'
@@ -320,13 +293,16 @@ export default function Calendar(): ReactNode {
                                 // scrollbarGutter: 'stable',
                             }
                         }
-                        className='z-1 h-full flex flex-grow flex-col overflow-x-scroll [&>*]:px-spacing-5'
+                        className='z-1 h-full min-w-0 flex flex-grow flex-col overflow-x-auto [&>*]:px-spacing-5'
                     >
                         <CalendarHeader />
                         <div
-                            className={clsx('min-h-2xl min-w-5xl flex-grow gap-0 pl-spacing-3 screenshot:min-h-xl', {
-                                'screenshot:flex-grow-0': bottomBar !== null, // html-to-image seems to have a bug with flex-grow
-                            })}
+                            className={clsx(
+                                'min-h-2xl min-w-[640px] flex-grow gap-0 pl-spacing-3 screenshot:min-h-xl',
+                                {
+                                    'screenshot:flex-grow-0': bottomBar !== null, // html-to-image seems to have a bug with flex-grow
+                                }
+                            )}
                         >
                             <CalendarGrid
                                 courseCells={courseCells}
@@ -337,6 +313,7 @@ export default function Calendar(): ReactNode {
                         </div>
                         {bottomBar}
                     </div>
+                    <CalendarBackups />
                 </div>
 
                 {course && (
