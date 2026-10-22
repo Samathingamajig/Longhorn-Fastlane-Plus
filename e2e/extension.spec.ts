@@ -395,7 +395,7 @@ test.describe('network activity matches the privacy policy', () => {
     });
 });
 
-test.describe('degree audit, recommendations, reminders, map, wallpaper', () => {
+test.describe('degree audit, recommendations, reminders and simple navigation', () => {
     test('imports an IDA HTML file locally and shows review items', async ({ context, extensionId }) => {
         const page = await context.newPage();
         await page.goto(`chrome-extension://${extensionId}/fastlane.html#audit`);
@@ -451,24 +451,30 @@ test.describe('degree audit, recommendations, reminders, map, wallpaper', () => 
         await page.screenshot({ path: `${SHOTS}/6-registration-prep-reminders.png`, fullPage: false });
     });
 
-    test('campus map and wallpaper render locally', async ({ context, extensionId }) => {
+    test('planner shows four primary pages without map, wallpaper or history clutter', async ({ context, extensionId }) => {
         const page = await context.newPage();
         await openDemo(page, extensionId);
-        await page.goto(`chrome-extension://${extensionId}/fastlane.html#map`);
-        await expect(page.locator('.map-wrap circle').first()).toBeVisible();
-        await expect(page.getByText(/estimates, not verified routes/)).toBeVisible();
-        await page.screenshot({ path: `${SHOTS}/7-campus-map.png`, fullPage: false });
+        await page.goto(`chrome-extension://${extensionId}/fastlane.html#home`);
+        const nav = page.getByRole('navigation', { name: 'Sections' });
+        await expect(nav.getByRole('button')).toHaveCount(4);
+        for (const label of ['Overview', 'Find classes', 'My schedule', 'Degree progress']) {
+            await expect(nav.getByRole('button', { name: label })).toBeVisible();
+        }
+        await expect(nav.getByText('Campus map')).toHaveCount(0);
+        await expect(nav.getByText('Phone wallpaper')).toHaveCount(0);
+        await expect(nav.getByText('History & undo')).toHaveCount(0);
+
+        await nav.getByRole('button', { name: 'Find classes' }).click();
+        await page.getByRole('button', { name: 'Browse all classes' }).click();
+        await expect(page.getByRole('combobox', { name: 'Subject' })).toBeVisible();
+        await expect(page.getByRole('group', { name: 'Allowed class days' })).toBeVisible();
+        await expect(page.getByRole('combobox', { name: 'Minimum historical A minus percentage' })).toBeVisible();
+
+        // Old bookmarked links should lead back to a supported planner screen.
         await page.goto(`chrome-extension://${extensionId}/fastlane.html#wallpaper`);
-        await expect(page.getByRole('combobox', { name: 'Schedule for wallpaper' })).toBeVisible();
-        await expect(page.getByRole('link', { name: 'Open calendar to add or review classes' })).toHaveAttribute(
-            'href',
-            `chrome-extension://${extensionId}/calendar.html`
-        );
-        const dataUrlLength = await page
-            .locator('canvas')
-            .evaluate(c => (c as HTMLCanvasElement).toDataURL('image/png').length);
-        expect(dataUrlLength).toBeGreaterThan(20_000);
-        await page.screenshot({ path: `${SHOTS}/8-wallpaper.png`, fullPage: false });
+        await expect(page.getByRole('heading', { name: 'Plan your next semester.' })).toBeVisible();
+        await page.goto(`chrome-extension://${extensionId}/fastlane.html#map`);
+        await expect(page.getByRole('heading', { name: 'Plan your next semester.' })).toBeVisible();
     });
 
     test('works offline: grades, conflicts, plans and cached recommendations', async ({ context, extensionId }) => {
