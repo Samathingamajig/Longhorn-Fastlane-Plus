@@ -425,6 +425,9 @@ test.describe('degree audit, recommendations, reminders and simple navigation', 
         expect(text).not.toContain('GOV 310L');
         expect(text).toMatch(/Open as of|Check availability|Closed as of/);
         expect(text).toContain('Satisfies Core 050');
+        await expect(page.getByRole('button', { name: 'Add to my schedule' }).first()).toBeVisible();
+        await page.getByRole('button', { name: 'Add to my schedule' }).first().click();
+        await expect(page.getByRole('status')).toContainText('Added');
         await page.screenshot({ path: `${SHOTS}/5-recommendations.png`, fullPage: false });
     });
 
