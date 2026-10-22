@@ -291,7 +291,7 @@ function SectionSummary({ s, grades }: { s: SectionRecord; grades: Grades }) {
         </>
     );
 }
-export function FinderTab({ generate = false }: { generate?: boolean }) {
+export function FinderTab({ generate = false, embedded = false }: { generate?: boolean; embedded?: boolean }) {
     const [catalog, setCatalog] = useState<SectionRecord[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [filters, setFilters] = useState<PlannerFilters>({ ...DEFAULT_FILTERS });
@@ -313,6 +313,13 @@ export function FinderTab({ generate = false }: { generate?: boolean }) {
         };
     }, []);
     const terms = [...new Set(catalog.map(s => semesterKey(s.semester)))].filter(t => t !== 'unknown');
+    const departments = [...new Set(catalog.map(s => s.courseCode.replace(/\\s+\\d.*$/, '').trim()).filter(Boolean))].sort();
+    useEffect(() => {
+        if (catalog.length && !filters.semester) {
+            const lastSeen = [...catalog].sort((a, b) => (b.capturedAt || 0) - (a.capturedAt || 0))[0];
+            if (lastSeen) setFilters(f => ({ ...f, semester: semesterKey(lastSeen.semester) }));
+        }
+    }, [catalog, filters.semester]);
     const pool = useMemo(
         () => catalog.filter(s => semesterKey(s.semester) === filters.semester),
         [catalog, filters.semester]
@@ -347,10 +354,9 @@ export function FinderTab({ generate = false }: { generate?: boolean }) {
     };
     return (
         <>
-            <h1>{generate ? 'Build several schedules' : 'Advanced course finder'}</h1>
-            <p>
-                Only real sections cached from UT pages you have visited. Choose a semester first. Grade filters exclude
-                missing data. Unknown meeting times cannot pass strict time or fit filters.
+            {!embedded && <h1>{generate ? 'Build a schedule' : 'Browse classes'}</h1>}
+            <p className='small muted'>
+                Sections come from UT course listings saved in this browser. Availability must be verified at UT.
             </p>
             <FilterControls
                 value={filters}
@@ -361,6 +367,7 @@ export function FinderTab({ generate = false }: { generate?: boolean }) {
                 }}
                 terms={terms}
                 tags={tags}
+                departments={departments}
                 showFits={!generate}
             />
             <p role='status'>{message}</p>
