@@ -119,147 +119,121 @@ function FilterControls({
     onChange: set,
     terms,
     tags,
+    departments,
     showFits = true,
 }: {
     value: PlannerFilters;
     onChange: (v: PlannerFilters) => void;
     terms: string[];
     tags: string[];
+    departments: string[];
     showFits?: boolean;
 }) {
     const update = (v: Partial<PlannerFilters>) => set({ ...f, ...v });
     return (
-        <section className='card planner-glass'>
-            <div className='planner-fields'>
+        <section className='card planner-glass compact-filters' aria-label='Course filters'>
+            <div className='filter-top'>
+                <h2>Filters</h2>
+                <button type='button' className='btn sm ghost' onClick={() => set({ ...DEFAULT_FILTERS, semester: f.semester })}>
+                    Clear filters
+                </button>
+            </div>
+            <div className='simple-filter-grid'>
                 <label>
                     Semester
-                    <select
-                        aria-label='Semester'
-                        value={f.semester}
-                        onChange={e => update({ semester: e.target.value })}
-                    >
+                    <select aria-label='Semester' value={f.semester} onChange={e => update({ semester: e.target.value })}>
                         <option value=''>Choose semester</option>
-                        {terms.map(t => (
-                            <option key={t}>{t}</option>
-                        ))}
+                        {terms.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </label>
                 <label>
-                    Course or title
-                    <input value={f.query} onChange={e => update({ query: e.target.value })} placeholder='UGS 302' />
-                </label>
-                <label>
-                    Professor
-                    <input value={f.professor} onChange={e => update({ professor: e.target.value })} />
-                </label>
-                <label>
-                    Delivery
-                    <select value={f.modality} onChange={e => update({ modality: e.target.value })}>
-                        <option value=''>Any delivery</option>
-                        {['async-online', 'live-online', 'in-person', 'hybrid'].map(m => (
-                            <option key={m}>{m}</option>
-                        ))}
+                    Subject
+                    <select aria-label='Subject' value={f.department ?? ''} onChange={e => update({ department: e.target.value })}>
+                        <option value=''>All subjects</option>
+                        {departments.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                 </label>
                 <label>
-                    Minimum A− or better (%)
-                    <input
-                        type='number'
-                        min='0'
-                        max='100'
-                        value={f.minGrade}
-                        onChange={e => update({ minGrade: Math.max(0, Math.min(100, Number(e.target.value))) })}
-                    />
+                    Course or keyword
+                    <input aria-label='Course or keyword' type='text' value={f.query}
+                        onChange={e => update({ query: e.target.value })} placeholder='UGS 302, Economics…' />
                 </label>
                 <label>
-                    Credit hours
-                    <select value={f.hours} onChange={e => update({ hours: Number(e.target.value) })}>
-                        <option value='0'>Any hours</option>
-                        {[1, 2, 3, 4, 5, 6].map(h => (
-                            <option key={h}>{h}</option>
-                        ))}
+                    A− or better
+                    <select aria-label='Minimum historical A minus percentage' value={f.minGrade}
+                        onChange={e => update({ minGrade: Number(e.target.value) })}>
+                        <option value={0}>Any grade history</option>
+                        <option value={60}>60%+</option>
+                        <option value={70}>70%+</option>
+                        <option value={80}>80%+</option>
+                        <option value={90}>90%+</option>
                     </select>
                 </label>
                 <label>
-                    Degree requirement
-                    <select value={f.requirement} onChange={e => update({ requirement: e.target.value })}>
-                        <option value=''>Any requirement</option>
-                        {tags.map(t => (
-                            <option key={t}>{t}</option>
-                        ))}
+                    Class type
+                    <select aria-label='Class type' value={f.modality} onChange={e => update({ modality: e.target.value })}>
+                        <option value=''>Any type</option>
+                        <option value='async-online'>Online, asynchronous</option>
+                        <option value='live-online'>Online, live</option>
+                        <option value='in-person'>In person</option>
+                        <option value='hybrid'>Hybrid</option>
                     </select>
-                </label>
-                <label>
-                    Earliest start
-                    <input
-                        type='time'
-                        value={`${String(Math.floor(f.start / 60)).padStart(2, '0')}:${String(f.start % 60).padStart(2, '0')}`}
-                        onChange={e => {
-                            const [h, m] = e.target.value.split(':').map(Number);
-                            if (h !== undefined && m !== undefined) update({ start: h * 60 + m });
-                        }}
-                    />
-                </label>
-                <label>
-                    Latest end
-                    <input
-                        type='time'
-                        value={
-                            f.end === 1440
-                                ? '23:59'
-                                : `${String(Math.floor(f.end / 60)).padStart(2, '0')}:${String(f.end % 60).padStart(2, '0')}`
-                        }
-                        onChange={e => {
-                            const [h, m] = e.target.value.split(':').map(Number);
-                            if (h !== undefined && m !== undefined) update({ end: h * 60 + m });
-                        }}
-                    />
                 </label>
             </div>
-            <div className='planner-actions'>
-                <span>Only these days:</span>
-                {DAY_ORDER.map(d => (
-                    <label key={d}>
-                        <input
-                            type='checkbox'
-                            checked={f.days.includes(d)}
-                            onChange={e =>
-                                update({ days: e.target.checked ? [...f.days, d] : f.days.filter(v => v !== d) })
-                            }
+            <div className='day-filter'>
+                <span className='small muted'>Days I can take classes</span>
+                <div className='day-chips' role='group' aria-label='Allowed class days'>
+                    {DAY_ORDER.map(d => (
+                        <button type='button' key={d} className='day-chip'
+                            aria-pressed={f.days.includes(d)}
+                            onClick={() => update({ days: f.days.includes(d) ? f.days.filter(x => x !== d) : [...f.days, d] })}>
+                            {d === 'TH' ? 'Thu' : d === 'SU' ? 'Sun' : d === 'T' ? 'Tue' : d === 'M' ? 'Mon' : d === 'W' ? 'Wed' : d === 'F' ? 'Fri' : 'Sat'}
+                        </button>
+                    ))}
+                    <button type='button' className='btn sm' onClick={() => update({ days: ['M', 'T', 'W', 'TH'] })}>
+                        No Fridays
+                    </button>
+                </div>
+            </div>
+            {showFits && (
+                <label className='check simple-fit'>
+                    <input type='checkbox' checked={f.fits} onChange={e => update({ fits: e.target.checked })} />
+                    Only classes that fit my schedule
+                </label>
+            )}
+            <details className='more-filters'>
+                <summary>More filters</summary>
+                <div className='planner-fields'>
+                    <label>Professor
+                        <input type='text' value={f.professor} onChange={e => update({ professor: e.target.value })} placeholder='Professor name' />
+                    </label>
+                    <label>Credit hours
+                        <select value={f.hours} onChange={e => update({ hours: Number(e.target.value) })}>
+                            <option value='0'>Any credit hours</option>
+                            {[1, 2, 3, 4, 5, 6].map(h => <option key={h} value={h}>{h}</option>)}
+                        </select>
+                    </label>
+                    <label>Degree requirement
+                        <select value={f.requirement} onChange={e => update({ requirement: e.target.value })}>
+                            <option value=''>Any requirement</option>
+                            {tags.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </label>
+                    <label>Earliest class start
+                        <input type='time'
+                            value={`${String(Math.floor(f.start / 60)).padStart(2, '0')}:${String(f.start % 60).padStart(2, '0')}`}
+                            onChange={e => { const [h, m] = e.target.value.split(':').map(Number); if (h !== undefined && m !== undefined) update({ start: h * 60 + m }); }}
                         />
-                        {d}
                     </label>
-                ))}
-            </div>
-            <div className='planner-actions'>
-                <button type='button' className='btn' onClick={() => update({ days: ['T', 'TH'] })}>
-                    Tuesday / Thursday
-                </button>
-                <button type='button' className='btn' onClick={() => update({ days: ['M', 'W', 'F'] })}>
-                    MWF
-                </button>
-                <button type='button' className='btn' onClick={() => update({ days: ['M', 'T', 'W', 'TH'] })}>
-                    No Fridays
-                </button>
-                <button type='button' className='btn' onClick={() => update({ start: 0, end: 720 })}>
-                    Mornings only
-                </button>
-                <button type='button' className='btn' onClick={() => set({ ...DEFAULT_FILTERS, semester: f.semester })}>
-                    Reset filters
-                </button>
-            </div>
-            <div className='planner-actions'>
-                <label>
-                    <input type='checkbox' checked={f.noGaps} onChange={e => update({ noGaps: e.target.checked })} />
-                    Back-to-back, no gaps
-                </label>
-                {showFits && (
-                    <label>
-                        <input type='checkbox' checked={f.fits} onChange={e => update({ fits: e.target.checked })} />
-                        Show only classes that fit my schedule
+                    <label>Latest class end
+                        <input type='time'
+                            value={f.end === 1440 ? '23:59' : `${String(Math.floor(f.end / 60)).padStart(2, '0')}:${String(f.end % 60).padStart(2, '0')}`}
+                            onChange={e => { const [h, m] = e.target.value.split(':').map(Number); if (h !== undefined && m !== undefined) update({ end: h * 60 + m }); }}
+                        />
                     </label>
-                )}
-            </div>
+                </div>
+            </details>
+            <p className='small muted'>Grade percentages are historical A− or better rates, not predictions. Filtering by a percentage excludes sections with no grade data.</p>
         </section>
     );
 }
