@@ -12,6 +12,7 @@ import { CORE_COMPONENTS, coreTag, describeRequirement } from '../core/requireme
 import type { SectionRecord } from '../core/sections';
 import { formatObservedTime, formatUnique, semesterKey } from '../core/sections';
 import { addBackupFor } from '../services/planService';
+import { addOrSwap } from '../services/planningService';
 import { buildRecommendations, loadCachedSections } from '../services/recommendationService';
 import { FastlaneAuditStore, FastlanePlanStore, FastlaneQueueStore, FastlaneSettingsStore } from '../storage/stores';
 import { CopyButton, GradeChip, instructorsText, ModalityChip, PageHead, UniqueCode } from './common';
@@ -110,6 +111,16 @@ export default function RecommendTab({ initialRequirement, embedded = false }: {
             setMessage(`Added ${formatUnique(rec.section.uniqueId)} to the registration queue.`);
         } catch (e) {
             setMessage((e as Error).message);
+        }
+    };
+
+    const addToSchedule = async (rec: Recommendation) => {
+        if (!schedule) return;
+        try {
+            await addOrSwap(schedule.id, rec.section);
+            setMessage(`Added ${rec.section.courseCode} to ${schedule.name}. Review any meeting conflicts on My schedule.`);
+        } catch (e) {
+            setMessage(e instanceof Error ? e.message : 'Could not add this section.');
         }
     };
 
@@ -286,6 +297,11 @@ export default function RecommendTab({ initialRequirement, embedded = false }: {
                         )}
                     </div>
                     <div className='stack' style={{ gap: 6, alignItems: 'flex-end' }}>
+                        <button type='button' className='btn sm primary'
+                            disabled={!schedule || !rec.section.course || rec.section.status?.value === 'CANCELLED'}
+                            onClick={() => void addToSchedule(rec)}>
+                            Add to my schedule
+                        </button>
                         <CopyButton text={formatUnique(rec.section.uniqueId)} label='Copy unique' />
                         <button type='button' className='btn sm' onClick={() => void addToQueue(rec)}>
                             Add to queue
