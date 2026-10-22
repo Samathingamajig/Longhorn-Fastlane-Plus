@@ -402,13 +402,13 @@ test.describe('degree audit, recommendations, reminders and simple navigation', 
         await page
             .locator('input[type=file]')
             .setInputFiles(resolve(process.cwd(), 'src/fastlane/__tests__/fixtures/dap-audit-results-real.html'));
-        await expect(page.getByText('core requirements complete')).toBeVisible();
+        await expect(page.getByText('requirements complete', { exact: true })).toBeVisible();
         await expect(page.getByRole('button', { name: /Needs review/ })).toBeVisible();
         await page.getByRole('button', { name: /^All \(/ }).click();
         await expect(page.getByText('CORE (090)').first()).toBeVisible();
         await page.screenshot({ path: `${SHOTS}/4-degree-audit-review.png`, fullPage: false });
         await page.reload();
-        await expect(page.getByText('core requirements complete')).toBeVisible(); // persisted
+        await expect(page.getByText('requirements complete', { exact: true })).toBeVisible(); // persisted
     });
 
     test('recommends only cached, requirement-matching sections with honest availability', async ({
