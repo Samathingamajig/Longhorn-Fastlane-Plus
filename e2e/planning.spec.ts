@@ -86,8 +86,8 @@ test('IDA-based home and simple course filters work without hidden advanced scre
     await expect(page.locator('.planner-results article').first()).toContainText('MUS');
     await page.getByRole('combobox', { name: 'Minimum historical A minus percentage' }).selectOption('80');
     await expect(page.getByText(/historical A− or better/i).first()).toBeVisible();
-    await page.getByRole('button', { name: 'Fri' }).click();
-    await expect(page.getByRole('button', { name: 'Fri' })).toHaveAttribute('aria-pressed', 'false');
+    await page.getByRole('button', { name: 'Fri', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Fri', exact: true })).toHaveAttribute('aria-pressed', 'false');
     await expect(page.getByText('More filters')).toBeVisible();
 
     await page.goto(`chrome-extension://${extensionId}/fastlane.html#audit`);
