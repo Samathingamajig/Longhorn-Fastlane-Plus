@@ -120,6 +120,8 @@ function FilterControls({
     terms,
     tags,
     departments,
+    gradeThreshold,
+    onGradeThresholdChange,
     showFits = true,
 }: {
     value: PlannerFilters;
@@ -127,6 +129,8 @@ function FilterControls({
     terms: string[];
     tags: string[];
     departments: string[];
+    gradeThreshold: 'A' | 'A-';
+    onGradeThresholdChange: (v: 'A' | 'A-') => void;
     showFits?: boolean;
 }) {
     const update = (v: Partial<PlannerFilters>) => set({ ...f, ...v });
@@ -159,7 +163,15 @@ function FilterControls({
                         onChange={e => update({ query: e.target.value })} placeholder='UGS 302, Economics…' />
                 </label>
                 <label>
-                    A− or better
+                    Historical grade
+                    <select aria-label='Historical grade metric' value={gradeThreshold}
+                        onChange={e => onGradeThresholdChange(e.target.value as 'A' | 'A-')}>
+                        <option value='A'>A percentage</option>
+                        <option value='A-'>A− or better percentage</option>
+                    </select>
+                </label>
+                <label>
+                    Minimum {gradeThreshold === 'A' ? 'A' : 'A− or better'} rate
                     <select aria-label='Minimum historical A minus percentage' value={f.minGrade}
                         onChange={e => update({ minGrade: Number(e.target.value) })}>
                         <option value={0}>Any grade history</option>
@@ -233,7 +245,7 @@ function FilterControls({
                     </label>
                 </div>
             </details>
-            <p className='small muted'>Grade percentages are historical A− or better rates, not predictions. Filtering by a percentage excludes sections with no grade data.</p>
+            <p className='small muted'>Grade percentages are historical {gradeThreshold === 'A' ? 'A rates' : 'A− or better rates'}, not predictions. Filtering by a percentage excludes sections with no grade data.</p>
         </section>
     );
 }
@@ -283,7 +295,7 @@ function SectionSummary({ s, grades }: { s: SectionRecord; grades: Grades }) {
                     .join(' · ') || (s.modality === 'async-online' ? 'Asynchronous' : 'Meeting times unknown')}
                 <br />
                 {g
-                    ? `${g.result.percent.toFixed(1)}% A− or better · ${g.result.graded} historical grades · ${g.scope}${g.smallSample ? ' · small sample' : ''}`
+                    ? `${g.result.percent.toFixed(1)}% ${g.result.threshold === 'A' ? 'A' : 'A− or better'} · ${g.result.graded} historical grades · ${g.scope}${g.smallSample ? ' · small sample' : ''}`
                     : 'Historical grades unavailable'}
                 <br />
                 {availabilityDisplay(s.status).text}
@@ -295,6 +307,7 @@ export function FinderTab({ generate = false, embedded = false }: { generate?: b
     const [catalog, setCatalog] = useState<SectionRecord[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [filters, setFilters] = useState<PlannerFilters>({ ...DEFAULT_FILTERS });
+    const [gradeThreshold, setGradeThreshold] = useState<'A' | 'A-'>('A-');
     const [selected, setSelected] = useState<string[]>([]);
     const [result, setResult] = useState<ReturnType<typeof generateSchedules> | null>(null);
     const [message, setMessage] = useState('');
@@ -324,7 +337,7 @@ export function FinderTab({ generate = false, embedded = false }: { generate?: b
         () => catalog.filter(s => semesterKey(s.semester) === filters.semester),
         [catalog, filters.semester]
     );
-    const grades = useGradeStats(pool, 'A-');
+    const grades = useGradeStats(pool, gradeThreshold);
     const activeSections = useMemo(() => active?.courses.map(c => sectionFromCourse(c)) ?? [], [active]);
     const tags = [...new Set(pool.flatMap(s => s.requirementTags))].sort();
     const needed = new Set(audit?.requirements.filter(r => r.status !== 'completed').flatMap(r => r.tags) ?? []);
@@ -368,6 +381,8 @@ export function FinderTab({ generate = false, embedded = false }: { generate?: b
                 terms={terms}
                 tags={tags}
                 departments={departments}
+                gradeThreshold={gradeThreshold}
+                onGradeThresholdChange={setGradeThreshold}
                 showFits={!generate}
             />
             <p role='status'>{message}</p>
