@@ -313,7 +313,7 @@ export function FinderTab({ generate = false, embedded = false }: { generate?: b
         };
     }, []);
     const terms = [...new Set(catalog.map(s => semesterKey(s.semester)))].filter(t => t !== 'unknown');
-    const departments = [...new Set(catalog.map(s => s.courseCode.replace(/\\s+\\d.*$/, '').trim()).filter(Boolean))].sort();
+    const departments = [...new Set(catalog.map(s => s.courseCode.replace(/\s+\d.*$/, '').trim()).filter(Boolean))].sort();
     useEffect(() => {
         if (catalog.length && !filters.semester) {
             const lastSeen = [...catalog].sort((a, b) => (b.capturedAt || 0) - (a.capturedAt || 0))[0];
